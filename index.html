@@ -1,639 +1,1530 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Registro de Trabajos y Citas</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expedientes y Citas</title>
   <style>
-    :root{
-      --bg:#0b1220; --card:#111a2e; --muted:#9fb0d0; --text:#e8eefc;
-      --accent:#5aa7ff; --ok:#2dd4bf; --warn:#fbbf24; --bad:#fb7185; --line:#223052;
+    :root {
+      --bg: #111827;
+      --bg-soft: #1f2937;
+      --panel: #ffffff;
+      --panel-soft: #f3f4f6;
+      --line: #d1d5db;
+      --text: #111827;
+      --muted: #6b7280;
+      --primary: #1d4ed8;
+      --primary-dark: #1e3a8a;
+      --success: #166534;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --shadow: 0 14px 34px rgba(17, 24, 39, 0.08);
+      --radius: 14px;
     }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:linear-gradient(120deg,#050914,#0b1220 40%,#070c1a); color:var(--text);
-    }
-    header{
-      padding:18px 16px; border-bottom:1px solid var(--line);
-      position:sticky; top:0; background:rgba(11,18,32,.92); backdrop-filter: blur(8px);
-      z-index:10;
-    }
-    header h1{margin:0; font-size:18px}
-    header p{margin:6px 0 0; color:var(--muted); font-size:13px}
 
-    .wrap{max-width:1200px; margin:0 auto; padding:16px}
-    .grid{display:grid; grid-template-columns: 380px 1fr; gap:16px}
-    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    * {
+      box-sizing: border-box;
+    }
 
-    .card{
-      background:rgba(17,26,46,.95); border:1px solid var(--line); border-radius:14px;
-      padding:14px;
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #eef1f5;
+      color: var(--text);
     }
-    .card h2{margin:0 0 10px; font-size:15px}
-    .row{display:grid; gap:10px; grid-template-columns:1fr 1fr}
-    .row3{display:grid; gap:10px; grid-template-columns:1fr 1fr 1fr}
-    .rowfull{grid-template-columns:1fr}
-    label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
-    input, select, textarea{
-      width:100%; padding:10px 10px; border-radius:10px; border:1px solid var(--line);
-      background:#0b1326; color:var(--text); outline:none;
-    }
-    textarea{min-height:70px; resize:vertical}
-    input[type="range"]{padding:0}
-    .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
-    button{
-      border:1px solid var(--line); background:#0c1630; color:var(--text);
-      padding:10px 12px; border-radius:12px; cursor:pointer;
-    }
-    button.primary{background:linear-gradient(90deg,#2b6cff,#56b5ff); border:none; color:#061022; font-weight:700}
-    button.danger{border-color:#3a1a2a; background:#1a0d16}
-    button:active{transform:translateY(1px)}
-    .hint{margin-top:10px; color:var(--muted); font-size:12px; line-height:1.35}
 
-    .topbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px}
-    .pill{
-      display:inline-flex; gap:8px; align-items:center; padding:8px 10px;
-      border:1px solid var(--line); border-radius:999px; background:#0b1326;
-      color:var(--muted); font-size:12px;
+    #app {
+      min-height: 100vh;
     }
-    .pill strong{color:var(--text)}
-    .split{display:grid; grid-template-columns:1.2fr .8fr; gap:12px}
-    @media (max-width: 980px){ .split{grid-template-columns:1fr} }
 
-    table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:12px}
-    th, td{padding:10px; border-bottom:1px solid var(--line); vertical-align:top}
-    th{font-size:12px; color:var(--muted); text-align:left; background:#0b1326; position:sticky; top:0}
-    .tag{display:inline-block; padding:3px 8px; border-radius:999px; font-size:11px; border:1px solid var(--line); color:var(--muted)}
-    .tag.ok{border-color:rgba(45,212,191,.35); color:var(--ok)}
-    .tag.warn{border-color:rgba(251,191,36,.35); color:var(--warn)}
-    .tag.bad{border-color:rgba(251,113,133,.35); color:var(--bad)}
-    .progress{
-      height:10px; background:#0b1326; border:1px solid var(--line); border-radius:999px; overflow:hidden;
-      margin-top:6px;
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 22px 28px;
+      background: linear-gradient(90deg, #0f172a, #1f2937);
+      border-bottom: 4px solid #1d4ed8;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
     }
-    .progress > div{height:100%; background:linear-gradient(90deg,var(--ok),var(--accent)); width:0%}
-    .actions{display:flex; gap:8px; flex-wrap:wrap}
-    .small{font-size:12px; color:var(--muted)}
-    .click{cursor:pointer}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 29px;
+      color: #ffffff;
+      letter-spacing: 0.2px;
+    }
+
+    .topbar p {
+      margin: 6px 0 0;
+      color: #cbd5e1;
+      font-size: 14px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    main {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 22px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #f9fafb, #f3f4f6);
+    }
+
+    .panel-header h2,
+    .panel-header h3 {
+      margin: 0;
+      font-size: 20px;
+      color: #0f172a;
+    }
+
+    .panel-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .panel-body {
+      padding: 20px 22px 22px;
+      background: #ffffff;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .stat-card {
+      background: linear-gradient(180deg, #ffffff, #f9fafb);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .stat-card span {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .stat-card strong {
+      font-size: 30px;
+      display: block;
+      color: #111827;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .tab-btn,
+    button,
+    .ghost-btn,
+    .small-btn {
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      font-weight: 600;
+    }
+
+    .tab-btn,
+    button {
+      padding: 11px 15px;
+    }
+
+    .tab-btn {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+    }
+
+    button:hover,
+    .tab-btn:hover,
+    .ghost-btn:hover,
+    .small-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(0.98);
+    }
+
+    .ghost-btn {
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--line);
+      padding: 10px 14px;
+    }
+
+    .small-btn {
+      padding: 8px 10px;
+      background: #eff6ff;
+      color: #0f172a;
+      border: 1px solid #bfdbfe;
+      font-size: 12px;
+    }
+
+    .small-btn.danger {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+
+    .small-btn.secondary {
+      background: #f8fafc;
+      border-color: var(--line);
+      color: #334155;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .field,
+    .field-full {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 13px;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 13px;
+      font-size: 14px;
+      background: white;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    .actions-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .hint-box,
+    .notice-box,
+    .list-card,
+    .agenda-card {
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+    }
+
+    .hint-box p,
+    .notice-box p,
+    .list-card p,
+    .agenda-card p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    .notice-box.success {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .notice-box.warning {
+      background: #fff7ed;
+      border-color: #fed7aa;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr 0.9fr 0.9fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .list-wrap {
+      display: grid;
+      gap: 14px;
+      max-height: 760px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .record-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff, #fbfdff);
+      display: grid;
+      gap: 14px;
+    }
+
+    .record-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .record-top h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .badge-row,
+    .meta-row,
+    .record-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .badge.service { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .badge.status { background: #f8fafc; color: #334155; border-color: #cbd5e1; }
+    .badge.priority-alta,
+    .badge.priority-urgente { background: #fff7ed; color: #c2410c; border-color: #fdba74; }
+    .badge.priority-media { background: #ecfeff; color: #0f766e; border-color: #99f6e4; }
+    .badge.priority-baja { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .badge.payment-pendiente { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+    .badge.payment-parcial { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+    .badge.payment-pagado { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .badge.payment-no-facturado { background: #f8fafc; color: #475569; border-color: #cbd5e1; }
+    .badge.pending { background: #fefce8; color: #854d0e; border-color: #fde68a; }
+
+    .progress-block {
+      display: grid;
+      gap: 8px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), #22c55e);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .info-box {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .info-box strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .inline-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .mini-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: white;
+    }
+
+    .mini-item h4 {
+      margin: 0 0 4px;
+      font-size: 15px;
+    }
+
+    .empty-state {
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      background: #fbfdff;
+    }
+
+    .linkish {
+      color: var(--primary-dark);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1180px) {
+      .dashboard,
+      .toolbar,
+      .stats,
+      .section-grid,
+      .two-col {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 840px) {
+      .topbar,
+      .record-top,
+      .mini-item {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      main,
+      .panel-body,
+      .panel-header,
+      .topbar {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .dashboard,
+      .toolbar,
+      .stats,
+      .section-grid,
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <h1>Registro de trabajos, citas y avance</h1>
-      <p>Todo queda guardado en tu navegador. Puedes exportar/importar un respaldo en JSON.</p>
-    </div>
-  </header>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <h1>Control de expedientes y agenda técnica</h1>
+        <p>Ingeniería civil y arquitectura · expediente, seguimiento, agenda y cobranza</p>
+      </div>
+      <div class="topbar-actions">
+        <span id="cloudStatus" class="badge status">Nube: conectando...</span>
+        <button id="enableNotificationsBtn">Activar notificaciones</button>
+      </div>
+    </header>
 
-  <main class="wrap">
-    <div class="grid">
-      <!-- FORM -->
-      <section class="card">
-        <h2>Nuevo / Editar trabajo</h2>
-        <div class="row rowfull">
-          <div>
-            <label>Título del trabajo</label>
-            <input id="title" placeholder="Ej: Instalación, diseño, reparación..." />
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label>Cliente (opcional)</label>
-            <input id="client" placeholder="Nombre del cliente" />
-          </div>
-          <div>
-            <label>Prioridad</label>
-            <select id="priority">
-              <option value="Baja">Baja</option>
-              <option value="Media" selected>Media</option>
-              <option value="Alta">Alta</option>
-              <option value="Urgente">Urgente</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label>Estado</label>
-            <select id="status">
-              <option value="Pendiente" selected>Pendiente</option>
-              <option value="En progreso">En progreso</option>
-              <option value="En espera">En espera</option>
-              <option value="Terminado">Terminado</option>
-              <option value="Cancelado">Cancelado</option>
-            </select>
-          </div>
-          <div>
-            <label>Fecha límite (opcional)</label>
-            <input id="dueDate" type="date" />
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label>Próxima cita (fecha)</label>
-            <input id="apptDate" type="date" />
-          </div>
-          <div>
-            <label>Hora de cita</label>
-            <input id="apptTime" type="time" />
-          </div>
-        </div>
-
-        <div class="row rowfull">
-          <div>
-            <label>Avance: <span id="progressLabel" class="mono">0%</span></label>
-            <input id="progress" type="range" min="0" max="100" step="5" value="0" />
-          </div>
-        </div>
-
-        <div class="row rowfull">
-          <div>
-            <label>Notas</label>
-            <textarea id="notes" placeholder="Materiales, pendientes, acuerdos, etc."></textarea>
-          </div>
-        </div>
-
-        <div class="btns">
-          <button class="primary" id="saveBtn">Guardar</button>
-          <button id="clearBtn">Limpiar formulario</button>
-          <button class="danger" id="deleteBtn" disabled>Eliminar</button>
-        </div>
-
-        <div class="hint">
-          Tip: Haz clic en cualquier trabajo de la tabla para editarlo. Si el estado es <strong>Terminado</strong>, el avance se ajusta a 100%.
-        </div>
+    <main>
+      <section class="stats">
+        <article class="stat-card">
+          <span>Expedientes totales</span>
+          <strong id="totalExpedientes">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Expedientes activos</span>
+          <strong id="expedientesActivos">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Citas próximas</span>
+          <strong id="citasProximas">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Cobranza pendiente</span>
+          <strong id="cobranzaPendiente">MXN 0</strong>
+        </article>
       </section>
 
-      <!-- LIST & DASHBOARD -->
-      <section class="card">
-        <div class="topbar">
-          <span class="pill">Trabajos: <strong id="countAll">0</strong></span>
-          <span class="pill">Pendientes/Progreso: <strong id="countOpen">0</strong></span>
-          <span class="pill">Citas próximas (7 días): <strong id="countAppt">0</strong></span>
-          <span class="pill">Promedio avance: <strong id="avgProg">0%</strong></span>
-        </div>
-
-        <div class="split">
-          <div class="card" style="padding:12px; margin:0;">
-            <h2 style="margin-bottom:8px;">Filtros</h2>
-            <div class="row">
-              <div>
-                <label>Buscar</label>
-                <input id="q" placeholder="Título, cliente, notas..." />
-              </div>
-              <div>
-                <label>Estado</label>
-                <select id="fStatus">
-                  <option value="">Todos</option>
-                  <option>Pendiente</option>
-                  <option>En progreso</option>
-                  <option>En espera</option>
-                  <option>Terminado</option>
-                  <option>Cancelado</option>
-                </select>
-              </div>
+      <div class="dashboard">
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Captura y operación</h2>
+              <p>Sección separada para crear expedientes y crear citas de inspección, visitas y seguimiento.</p>
             </div>
-            <div class="row">
-              <div>
-                <label>Prioridad</label>
-                <select id="fPriority">
-                  <option value="">Todas</option>
-                  <option>Baja</option>
-                  <option>Media</option>
-                  <option>Alta</option>
-                  <option>Urgente</option>
-                </select>
-              </div>
-              <div>
-                <label>Orden</label>
-                <select id="sortBy">
-                  <option value="updatedDesc" selected>Última actualización</option>
-                  <option value="dueAsc">Fecha límite (próxima)</option>
-                  <option value="apptAsc">Cita (próxima)</option>
-                  <option value="progressDesc">Avance (mayor)</option>
-                </select>
-              </div>
+          </div>
+          <div class="panel-body">
+            <div class="tabs">
+              <button class="tab-btn active" data-form-tab="expediente">Crear expediente</button>
+              <button class="tab-btn" data-form-tab="cita">Crear cita</button>
             </div>
-            <div class="btns">
-              <button id="exportBtn">Exportar JSON</button>
-              <button id="importBtn">Importar JSON</button>
-              <input id="importFile" type="file" accept="application/json" style="display:none" />
+
+            <section id="expedienteFormSection">
+              <div class="notice-box success">
+                <strong>Expediente independiente</strong>
+                <p>Aquí registras el servicio, datos del predio, avance, cobro y bloqueos del trabajo.</p>
+              </div>
+              <div class="section-grid" style="margin-top:16px;">
+                <div class="field">
+                  <label for="expNumero">Número de expediente</label>
+                  <input id="expNumero" placeholder="Ej. AV-2026-014" />
+                </div>
+                <div class="field">
+                  <label for="expServicio">Tipo de servicio</label>
+                  <select id="expServicio">
+                    <option value="Avalúo">Avalúo</option>
+                    <option value="Trámite">Trámite</option>
+                    <option value="Obra">Obra</option>
+                    <option value="Levantamiento">Levantamiento</option>
+                    <option value="Proyecto arquitectónico">Proyecto arquitectónico</option>
+                    <option value="Regularización">Regularización</option>
+                    <option value="Dictamen">Dictamen</option>
+                    <option value="Topografía">Topografía</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="expNombre">Nombre del expediente</label>
+                  <input id="expNombre" placeholder="Ej. Avalúo casa habitación" />
+                </div>
+                <div class="field">
+                  <label for="expCliente">Cliente / razón social</label>
+                  <input id="expCliente" placeholder="Nombre del cliente" />
+                </div>
+                <div class="field">
+                  <label for="expContacto">Teléfono / contacto</label>
+                  <input id="expContacto" placeholder="Teléfono o WhatsApp" />
+                </div>
+                <div class="field">
+                  <label for="expCorreo">Correo electrónico</label>
+                  <input id="expCorreo" type="email" placeholder="correo@ejemplo.com" />
+                </div>
+                <div class="field-full">
+                  <label for="expDireccion">Dirección del predio / obra</label>
+                  <input id="expDireccion" placeholder="Calle, número, colonia, municipio" />
+                </div>
+                <div class="field">
+                  <label for="expMunicipio">Municipio / ciudad</label>
+                  <input id="expMunicipio" placeholder="Municipio o ciudad" />
+                </div>
+                <div class="field">
+                  <label for="expEstado">Estado / entidad</label>
+                  <input id="expEstado" placeholder="Estado" />
+                </div>
+                <div class="field">
+                  <label for="expStatus">Estado del expediente</label>
+                  <select id="expStatus">
+                    <option value="Prospección">Prospección</option>
+                    <option value="Activo" selected>Activo</option>
+                    <option value="En espera">En espera</option>
+                    <option value="Entregado">Entregado</option>
+                    <option value="Cerrado">Cerrado</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="expPrioridad">Prioridad</label>
+                  <select id="expPrioridad">
+                    <option value="Baja">Baja</option>
+                    <option value="Media" selected>Media</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Urgente">Urgente</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="expEtapa">Etapa actual</label>
+                  <input id="expEtapa" placeholder="Ej. Visita, análisis, ejecución" />
+                </div>
+                <div class="field">
+                  <label for="expAvance">Avance %</label>
+                  <input id="expAvance" type="number" min="0" max="100" value="0" />
+                </div>
+                <div class="field">
+                  <label for="expFechaInicio">Fecha de inicio</label>
+                  <input id="expFechaInicio" type="date" />
+                </div>
+                <div class="field">
+                  <label for="expFechaEntrega">Fecha de entrega</label>
+                  <input id="expFechaEntrega" type="date" />
+                </div>
+                <div class="field">
+                  <label for="expCotizacion">Cotización total</label>
+                  <input id="expCotizacion" type="number" min="0" step="0.01" placeholder="0.00" />
+                </div>
+                <div class="field">
+                  <label for="expAnticipo">Anticipo recibido</label>
+                  <input id="expAnticipo" type="number" min="0" step="0.01" placeholder="0.00" />
+                </div>
+                <div class="field">
+                  <label for="expPagoStatus">Estado de pago</label>
+                  <select id="expPagoStatus">
+                    <option value="No facturado">No facturado</option>
+                    <option value="Pendiente" selected>Pendiente</option>
+                    <option value="Parcial">Parcial</option>
+                    <option value="Pagado">Pagado</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="expEsperaDe">En espera de</label>
+                  <select id="expEsperaDe">
+                    <option value="Nadie">Nadie</option>
+                    <option value="Cliente">Cliente</option>
+                    <option value="Municipio">Municipio</option>
+                    <option value="Catastro">Catastro</option>
+                    <option value="Notaría">Notaría</option>
+                    <option value="Proveedor">Proveedor</option>
+                    <option value="Interno">Interno</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+                <div class="field-full">
+                  <label for="expPendiente">Qué falta / bloqueo actual</label>
+                  <textarea id="expPendiente" placeholder="Describe el pendiente principal"></textarea>
+                </div>
+                <div class="field-full">
+                  <label for="expDocumentos">Documentos / liga de carpeta</label>
+                  <textarea id="expDocumentos" placeholder="Escrituras, INE, predial, Drive, etc."></textarea>
+                </div>
+                <div class="field-full">
+                  <label for="expNotas">Notas internas</label>
+                  <textarea id="expNotas" placeholder="Observaciones técnicas y administrativas"></textarea>
+                </div>
+              </div>
+              <div class="actions-row">
+                <button id="saveExpedienteBtn">Guardar expediente</button>
+                <button class="ghost-btn" id="clearExpedienteBtn" type="button">Limpiar</button>
+                <button class="ghost-btn hidden" id="deleteExpedienteBtn" type="button">Eliminar expediente</button>
+              </div>
+            </section>
+
+            <section id="citaFormSection" class="hidden">
+              <div class="notice-box warning">
+                <strong>Citas separadas del expediente</strong>
+                <p>Registra inspecciones, levantamientos, visitas o reuniones y activa recordatorios locales.</p>
+              </div>
+              <div class="section-grid" style="margin-top:16px;">
+                <div class="field">
+                  <label for="citaTitulo">Título de la cita</label>
+                  <input id="citaTitulo" placeholder="Ej. Inspección estructural" />
+                </div>
+                <div class="field">
+                  <label for="citaTipo">Tipo de cita</label>
+                  <select id="citaTipo">
+                    <option value="Inspección">Inspección</option>
+                    <option value="Visita de obra">Visita de obra</option>
+                    <option value="Levantamiento">Levantamiento</option>
+                    <option value="Reunión con cliente">Reunión con cliente</option>
+                    <option value="Entrega">Entrega</option>
+                    <option value="Trámite">Trámite</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="citaExpediente">Expediente relacionado</label>
+                  <select id="citaExpediente">
+                    <option value="">Sin vincular</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="citaResponsable">Responsable</label>
+                  <input id="citaResponsable" placeholder="Quién asiste" />
+                </div>
+                <div class="field">
+                  <label for="citaFecha">Fecha</label>
+                  <input id="citaFecha" type="date" />
+                </div>
+                <div class="field">
+                  <label for="citaHora">Hora</label>
+                  <input id="citaHora" type="time" />
+                </div>
+                <div class="field-full">
+                  <label for="citaLugar">Lugar</label>
+                  <input id="citaLugar" placeholder="Dirección o punto de reunión" />
+                </div>
+                <div class="field">
+                  <label for="citaReminder">Recordatorio</label>
+                  <select id="citaReminder">
+                    <option value="15">15 minutos antes</option>
+                    <option value="30">30 minutos antes</option>
+                    <option value="60" selected>1 hora antes</option>
+                    <option value="180">3 horas antes</option>
+                    <option value="1440">1 día antes</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="citaStatus">Estado de la cita</label>
+                  <select id="citaStatus">
+                    <option value="Programada" selected>Programada</option>
+                    <option value="Confirmada">Confirmada</option>
+                    <option value="Realizada">Realizada</option>
+                    <option value="Reagendada">Reagendada</option>
+                    <option value="Cancelada">Cancelada</option>
+                  </select>
+                </div>
+                <div class="field-full">
+                  <label for="citaNotas">Notas</label>
+                  <textarea id="citaNotas" placeholder="Qué se revisará, qué llevar, acuerdos, etc."></textarea>
+                </div>
+              </div>
+              <div class="actions-row">
+                <button id="saveCitaBtn">Guardar cita</button>
+                <button class="ghost-btn" id="clearCitaBtn" type="button">Limpiar</button>
+                <button class="ghost-btn hidden" id="deleteCitaBtn" type="button">Eliminar cita</button>
+              </div>
+            </section>
+
+            <div class="footer-note">
+              <strong>Dónde se guardan los datos:</strong> esta versión ya está preparada para guardar expedientes y citas en <strong>Firebase Firestore</strong>, por lo que podrás ver la misma información desde otro teléfono, tableta o computadora usando la misma app. Además, se conserva un <strong>respaldo local</strong> en el navegador por si la red falla temporalmente.
+              <br /><br />
+              <strong>Cómo se mandan las notificaciones:</strong> el botón <strong>Activar notificaciones</strong> solicita permiso al navegador para mostrar avisos locales antes de una cita programada. En esta versión, los recordatorios aparecen como notificaciones del navegador mientras la app esté abierta y el permiso siga activo.
+              <br /><br />
+              <strong>Trabajos pendientes y citas:</strong> los expedientes pendientes se reflejan en los estados, avances, bloqueos y métricas superiores. Las citas próximas se calculan por fecha y hora, y sus recordatorios se disparan según el tiempo que configures en cada cita.
+              <br /><br />
+              <strong>Importante:</strong> para recibir avisos aunque la app esté cerrada, o para mandar recordatorios por <strong>correo, WhatsApp o push real entre dispositivos</strong>, todavía haría falta agregar <strong>Firebase Cloud Messaging</strong> o un servicio externo de mensajería.
             </div>
-            <p class="hint">Exportar te crea un archivo de respaldo. Importar reemplaza tu lista actual por lo del archivo.</p>
           </div>
+        </section>
 
-          <div class="card" style="padding:12px; margin:0;">
-            <h2 style="margin-bottom:8px;">Citas próximas</h2>
-            <div id="nextAppts" class="small">No hay citas registradas.</div>
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Consulta y seguimiento</h2>
+              <p>Sección separada para ver expedientes y ver citas con filtros rápidos.</p>
+            </div>
           </div>
-        </div>
+          <div class="panel-body">
+            <div class="tabs">
+              <button class="tab-btn active" data-view-tab="expedientes">Ver expedientes</button>
+              <button class="tab-btn" data-view-tab="citas">Ver citas</button>
+            </div>
 
-        <div style="margin-top:12px;">
-          <h2 style="margin:10px 0;">Lista de trabajos</h2>
-          <div style="max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:12px;">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width:34%;">Trabajo</th>
-                  <th style="width:18%;">Estado / Prioridad</th>
-                  <th style="width:18%;">Cita</th>
-                  <th style="width:18%;">Límite</th>
-                  <th style="width:12%;">Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tbody"></tbody>
-            </table>
+            <section id="expedientesViewSection">
+              <div class="toolbar">
+                <div class="field">
+                  <label for="searchExpedientes">Buscar expediente</label>
+                  <input id="searchExpedientes" placeholder="Número, cliente, servicio o dirección" />
+                </div>
+                <div class="field">
+                  <label for="filterServicio">Servicio</label>
+                  <select id="filterServicio">
+                    <option value="">Todos</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="filterEstadoExp">Estado</label>
+                  <select id="filterEstadoExp">
+                    <option value="">Todos</option>
+                    <option value="Prospección">Prospección</option>
+                    <option value="Activo">Activo</option>
+                    <option value="En espera">En espera</option>
+                    <option value="Entregado">Entregado</option>
+                    <option value="Cerrado">Cerrado</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="filterPrioridadExp">Prioridad</label>
+                  <select id="filterPrioridadExp">
+                    <option value="">Todas</option>
+                    <option value="Baja">Baja</option>
+                    <option value="Media">Media</option>
+                    <option value="Alta">Alta</option>
+                    <option value="Urgente">Urgente</option>
+                  </select>
+                </div>
+              </div>
+              <div id="expedientesList" class="list-wrap"></div>
+            </section>
+
+            <section id="citasViewSection" class="hidden">
+              <div class="toolbar">
+                <div class="field">
+                  <label for="searchCitas">Buscar cita</label>
+                  <input id="searchCitas" placeholder="Título, responsable, lugar o expediente" />
+                </div>
+                <div class="field">
+                  <label for="filterTipoCita">Tipo</label>
+                  <select id="filterTipoCita">
+                    <option value="">Todos</option>
+                    <option value="Inspección">Inspección</option>
+                    <option value="Visita de obra">Visita de obra</option>
+                    <option value="Levantamiento">Levantamiento</option>
+                    <option value="Reunión con cliente">Reunión con cliente</option>
+                    <option value="Entrega">Entrega</option>
+                    <option value="Trámite">Trámite</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="filterEstadoCita">Estado</label>
+                  <select id="filterEstadoCita">
+                    <option value="">Todos</option>
+                    <option value="Programada">Programada</option>
+                    <option value="Confirmada">Confirmada</option>
+                    <option value="Realizada">Realizada</option>
+                    <option value="Reagendada">Reagendada</option>
+                    <option value="Cancelada">Cancelada</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="filterProximidadCita">Ventana</label>
+                  <select id="filterProximidadCita">
+                    <option value="">Todas</option>
+                    <option value="hoy">Solo hoy</option>
+                    <option value="7">Próximos 7 días</option>
+                    <option value="30">Próximos 30 días</option>
+                  </select>
+                </div>
+              </div>
+              <div id="citasList" class="list-wrap"></div>
+            </section>
           </div>
-          <p class="hint">Tus datos se guardan automáticamente en este dispositivo/navegador. Si cambias de PC/teléfono, usa Exportar/Importar.</p>
-        </div>
-      </section>
-    </div>
-  </main>
+        </section>
+      </div>
+    </main>
+  </div>
 
-  <script>
-    // ---------- Storage helpers ----------
-    const STORAGE_KEY = "registro_trabajos_v1";
-    const safeJSON = {
-      load(){
-        try{
-          const raw = localStorage.getItem(STORAGE_KEY);
-          return raw ? JSON.parse(raw) : [];
-        }catch(e){ return []; }
-      },
-      save(data){
-        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
-      }
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+    const STORAGE_KEY = "merlin_expedientes_citas_v1";
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5E3AgtVwGh684u-o1T-Tz7ef1G9PmonE",
+      authDomain: "gaba-home-e5d12.firebaseapp.com",
+      projectId: "gaba-home-e5d12",
+      storageBucket: "gaba-home-e5d12.firebasestorage.app",
+      messagingSenderId: "513779572525",
+      appId: "1:513779572525:web:b30bdbaded4f75f42afda4",
+      measurementId: "G-CVY9CH6NDS"
     };
 
-    // ---------- Utilities ----------
-    const uid = () => Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
-    const pad = n => String(n).padStart(2,"0");
-    function toISODate(d){
-      return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
-    }
-    function parseDateMaybe(s){
-      if(!s) return null;
-      const d = new Date(s + "T00:00:00");
-      return isNaN(d) ? null : d;
-    }
-    function parseDateTimeMaybe(dateStr, timeStr){
-      if(!dateStr) return null;
-      const t = timeStr || "00:00";
-      const d = new Date(dateStr + "T" + t + ":00");
-      return isNaN(d) ? null : d;
-    }
-    function fmtAppt(job){
-      if(!job.apptDate) return "—";
-      const t = job.apptTime ? (" " + job.apptTime) : "";
-      return job.apptDate + t;
-    }
-    function tagClassStatus(s){
-      if(s==="Terminado") return "ok";
-      if(s==="Cancelado") return "bad";
-      if(s==="En progreso") return "warn";
-      return "";
-    }
-    function tagClassPriority(p){
-      if(p==="Urgente") return "bad";
-      if(p==="Alta") return "warn";
-      if(p==="Media") return "";
-      return "ok";
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const expedientesRef = collection(db, "expedientes");
+    const citasRef = collection(db, "citas");
+
+    const state = {
+      expedientes: [],
+      citas: [],
+      editingExpedienteId: null,
+      editingCitaId: null,
+      reminderTimers: []
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const money = (value) => `MXN ${Number(value || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    function setCloudStatus(text) {
+      const el = $('cloudStatus');
+      if (el) el.textContent = text;
     }
 
-    // ---------- State ----------
-    let jobs = safeJSON.load();
-    let editingId = null;
-
-    // ---------- DOM ----------
-    const el = id => document.getElementById(id);
-    const title = el("title"), client = el("client"), priority = el("priority"),
-          status = el("status"), dueDate = el("dueDate"),
-          apptDate = el("apptDate"), apptTime = el("apptTime"),
-          progress = el("progress"), progressLabel = el("progressLabel"),
-          notes = el("notes");
-
-    const saveBtn = el("saveBtn"), clearBtn = el("clearBtn"), deleteBtn = el("deleteBtn");
-    const tbody = el("tbody");
-    const q = el("q"), fStatus = el("fStatus"), fPriority = el("fPriority"), sortBy = el("sortBy");
-
-    const countAll = el("countAll"), countOpen = el("countOpen"), countAppt = el("countAppt"), avgProg = el("avgProg");
-    const nextAppts = el("nextAppts");
-
-    // ---------- Form logic ----------
-    function setProgressUI(v){
-      progress.value = v;
-      progressLabel.textContent = v + "%";
-    }
-    progress.addEventListener("input", () => setProgressUI(progress.value));
-
-    status.addEventListener("change", () =>
-    status.addEventListener("change", () => {
-      const s = status.value;
-      if (s === "Terminado") setProgressUI(100);
-      if (s === "Pendiente" && Number(progress.value) === 100) setProgressUI(0);
-    });
-
-    function clearForm(){
-      editingId = null;
-      title.value = "";
-      client.value = "";
-      priority.value = "Media";
-      status.value = "Pendiente";
-      dueDate.value = "";
-      apptDate.value = "";
-      apptTime.value = "";
-      setProgressUI(0);
-      notes.value = "";
-      deleteBtn.disabled = true;
-      saveBtn.textContent = "Guardar";
-    }
-
-    function loadToForm(job){
-      editingId = job.id;
-      title.value = job.title || "";
-      client.value = job.client || "";
-      priority.value = job.priority || "Media";
-      status.value = job.status || "Pendiente";
-      dueDate.value = job.dueDate || "";
-      apptDate.value = job.apptDate || "";
-      apptTime.value = job.apptTime || "";
-      setProgressUI(Number(job.progress ?? 0));
-      notes.value = job.notes || "";
-      deleteBtn.disabled = false;
-      saveBtn.textContent = "Actualizar";
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function upsertJob(){
-      const t = title.value.trim();
-      if(!t){
-        alert("Escribe un título de trabajo.");
-        return;
+    async function loadData() {
+      setCloudStatus('Nube: cargando...');
+      try {
+        const [expSnap, citasSnap] = await Promise.all([getDocs(expedientesRef), getDocs(citasRef)]);
+        state.expedientes = expSnap.docs.map((item) => ({ id: item.id, ...item.data() }));
+        state.citas = citasSnap.docs.map((item) => ({ id: item.id, ...item.data() }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ expedientes: state.expedientes, citas: state.citas }));
+        setCloudStatus('Nube: conectada');
+      } catch (error) {
+        console.error('No se pudo cargar Firebase, usando copia local', error);
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            state.expedientes = Array.isArray(parsed.expedientes) ? parsed.expedientes : [];
+            state.citas = Array.isArray(parsed.citas) ? parsed.citas : [];
+          }
+        } catch (localError) {
+          console.error('No se pudo cargar la copia local', localError);
+        }
+        setCloudStatus('Nube: sin conexión');
       }
+    }
 
-      // Normalización
-      let s = status.value;
-      let p = Number(progress.value);
-      if (s === "Terminado") p = 100;
-      if (p === 100 && s !== "Terminado") s = "En progreso"; // opcional: evita 100% no terminado
+    function saveLocalBackup() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        expedientes: state.expedientes,
+        citas: state.citas
+      }));
+    }
 
-      const now = new Date().toISOString();
+    function formatDate(dateStr) {
+      if (!dateStr) return 'Sin fecha';
+      const date = new Date(`${dateStr}T00:00:00`);
+      if (Number.isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
 
-      const job = {
-        id: editingId || uid(),
-        title: t,
-        client: client.value.trim(),
-        priority: priority.value,
-        status: s,
-        dueDate: dueDate.value || "",
-        apptDate: apptDate.value || "",
-        apptTime: apptTime.value || "",
-        progress: p,
-        notes: notes.value.trim(),
-        createdAt: (editingId ? (jobs.find(j=>j.id===editingId)?.createdAt || now) : now),
-        updatedAt: now
+    function formatDateTime(dateStr, timeStr) {
+      if (!dateStr) return 'Sin programar';
+      const date = new Date(`${dateStr}T${timeStr || '00:00'}:00`);
+      if (Number.isNaN(date.getTime())) return `${dateStr} ${timeStr || ''}`.trim();
+      return date.toLocaleString('es-MX', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function expedienteLabel(exp) {
+      return `${exp.numero || 'SIN-NÚMERO'} · ${exp.nombre || 'Sin nombre'}`;
+    }
+
+    function getExpedienteById(id) {
+      return state.expedientes.find((item) => item.id === id) || null;
+    }
+
+    function getSaldoPendiente(exp) {
+      const cotizacion = Number(exp.cotizacion || 0);
+      const anticipo = Number(exp.anticipo || 0);
+      return Math.max(cotizacion - anticipo, 0);
+    }
+
+    function clearExpedienteForm() {
+      state.editingExpedienteId = null;
+      $('expNumero').value = '';
+      $('expServicio').value = 'Avalúo';
+      $('expNombre').value = '';
+      $('expCliente').value = '';
+      $('expContacto').value = '';
+      $('expCorreo').value = '';
+      $('expDireccion').value = '';
+      $('expMunicipio').value = '';
+      $('expEstado').value = '';
+      $('expStatus').value = 'Activo';
+      $('expPrioridad').value = 'Media';
+      $('expEtapa').value = '';
+      $('expAvance').value = 0;
+      $('expFechaInicio').value = '';
+      $('expFechaEntrega').value = '';
+      $('expCotizacion').value = '';
+      $('expAnticipo').value = '';
+      $('expPagoStatus').value = 'Pendiente';
+      $('expEsperaDe').value = 'Nadie';
+      $('expPendiente').value = '';
+      $('expDocumentos').value = '';
+      $('expNotas').value = '';
+      $('deleteExpedienteBtn').classList.add('hidden');
+      $('saveExpedienteBtn').textContent = 'Guardar expediente';
+    }
+
+    function clearCitaForm() {
+      state.editingCitaId = null;
+      $('citaTitulo').value = '';
+      $('citaTipo').value = 'Inspección';
+      $('citaExpediente').value = '';
+      $('citaResponsable').value = '';
+      $('citaFecha').value = '';
+      $('citaHora').value = '';
+      $('citaLugar').value = '';
+      $('citaReminder').value = '60';
+      $('citaStatus').value = 'Programada';
+      $('citaNotas').value = '';
+      $('deleteCitaBtn').classList.add('hidden');
+      $('saveCitaBtn').textContent = 'Guardar cita';
+    }
+
+    function fillExpedienteForm(exp) {
+      state.editingExpedienteId = exp.id;
+      $('expNumero').value = exp.numero || '';
+      $('expServicio').value = exp.servicio || 'Avalúo';
+      $('expNombre').value = exp.nombre || '';
+      $('expCliente').value = exp.cliente || '';
+      $('expContacto').value = exp.contacto || '';
+      $('expCorreo').value = exp.correo || '';
+      $('expDireccion').value = exp.direccion || '';
+      $('expMunicipio').value = exp.municipio || '';
+      $('expEstado').value = exp.estado || '';
+      $('expStatus').value = exp.status || 'Activo';
+      $('expPrioridad').value = exp.prioridad || 'Media';
+      $('expEtapa').value = exp.etapa || '';
+      $('expAvance').value = Number(exp.avance || 0);
+      $('expFechaInicio').value = exp.fechaInicio || '';
+      $('expFechaEntrega').value = exp.fechaEntrega || '';
+      $('expCotizacion').value = exp.cotizacion || '';
+      $('expAnticipo').value = exp.anticipo || '';
+      $('expPagoStatus').value = exp.pagoStatus || 'Pendiente';
+      $('expEsperaDe').value = exp.esperaDe || 'Nadie';
+      $('expPendiente').value = exp.pendiente || '';
+      $('expDocumentos').value = exp.documentos || '';
+      $('expNotas').value = exp.notas || '';
+      $('deleteExpedienteBtn').classList.remove('hidden');
+      $('saveExpedienteBtn').textContent = 'Actualizar expediente';
+      setFormTab('expediente');
+    }
+
+    function fillCitaForm(cita) {
+      state.editingCitaId = cita.id;
+      $('citaTitulo').value = cita.titulo || '';
+      $('citaTipo').value = cita.tipo || 'Inspección';
+      $('citaExpediente').value = cita.expedienteId || '';
+      $('citaResponsable').value = cita.responsable || '';
+      $('citaFecha').value = cita.fecha || '';
+      $('citaHora').value = cita.hora || '';
+      $('citaLugar').value = cita.lugar || '';
+      $('citaReminder').value = String(cita.reminder || 60);
+      $('citaStatus').value = cita.status || 'Programada';
+      $('citaNotas').value = cita.notas || '';
+      $('deleteCitaBtn').classList.remove('hidden');
+      $('saveCitaBtn').textContent = 'Actualizar cita';
+      setFormTab('cita');
+    }
+
+    function readExpedienteForm() {
+      const nombre = $('expNombre').value.trim();
+      const cliente = $('expCliente').value.trim();
+      if (!nombre || !cliente) {
+        alert('Captura al menos el nombre del expediente y el cliente.');
+        return null;
+      }
+      return {
+        id: state.editingExpedienteId || uid(),
+        numero: $('expNumero').value.trim(),
+        servicio: $('expServicio').value,
+        nombre,
+        cliente,
+        contacto: $('expContacto').value.trim(),
+        correo: $('expCorreo').value.trim(),
+        direccion: $('expDireccion').value.trim(),
+        municipio: $('expMunicipio').value.trim(),
+        estado: $('expEstado').value.trim(),
+        status: $('expStatus').value,
+        prioridad: $('expPrioridad').value,
+        etapa: $('expEtapa').value.trim(),
+        avance: Math.min(100, Math.max(0, Number($('expAvance').value || 0))),
+        fechaInicio: $('expFechaInicio').value,
+        fechaEntrega: $('expFechaEntrega').value,
+        cotizacion: Number($('expCotizacion').value || 0),
+        anticipo: Number($('expAnticipo').value || 0),
+        pagoStatus: $('expPagoStatus').value,
+        esperaDe: $('expEsperaDe').value,
+        pendiente: $('expPendiente').value.trim(),
+        documentos: $('expDocumentos').value.trim(),
+        notas: $('expNotas').value.trim(),
+        updatedAt: new Date().toISOString()
       };
-
-      const idx = jobs.findIndex(j => j.id === job.id);
-      if(idx >= 0) jobs[idx] = job;
-      else jobs.unshift(job);
-
-      safeJSON.save(jobs);
-      render();
-      clearForm();
     }
 
-    function deleteJob(id){
-      if(!confirm("¿Eliminar este trabajo?")) return;
-      jobs = jobs.filter(j => j.id !== id);
-      safeJSON.save(jobs);
-      render();
-      clearForm();
+    function readCitaForm() {
+      const titulo = $('citaTitulo').value.trim();
+      const fecha = $('citaFecha').value;
+      if (!titulo || !fecha) {
+        alert('Captura al menos el título y la fecha de la cita.');
+        return null;
+      }
+      return {
+        id: state.editingCitaId || uid(),
+        titulo,
+        tipo: $('citaTipo').value,
+        expedienteId: $('citaExpediente').value,
+        responsable: $('citaResponsable').value.trim(),
+        fecha,
+        hora: $('citaHora').value,
+        lugar: $('citaLugar').value.trim(),
+        reminder: Number($('citaReminder').value || 60),
+        status: $('citaStatus').value,
+        notas: $('citaNotas').value.trim(),
+        notified: false,
+        updatedAt: new Date().toISOString()
+      };
     }
 
-    saveBtn.addEventListener("click", upsertJob);
-    clearBtn.addEventListener("click", clearForm);
-    deleteBtn.addEventListener("click", () => {
-      if(editingId) deleteJob(editingId);
-    });
+    async function upsertExpediente() {
+      const expediente = readExpedienteForm();
+      if (!expediente) return;
+      try {
+        if (state.editingExpedienteId && state.expedientes.some((item) => item.id === expediente.id)) {
+          const payload = { ...expediente };
+          delete payload.id;
+          await updateDoc(doc(db, 'expedientes', expediente.id), payload);
+          const index = state.expedientes.findIndex((item) => item.id === expediente.id);
+          if (index >= 0) state.expedientes[index] = { ...state.expedientes[index], ...expediente };
+        } else {
+          const payload = { ...expediente };
+          delete payload.id;
+          const ref = await addDoc(expedientesRef, payload);
+          expediente.id = ref.id;
+          state.expedientes.unshift(expediente);
+        }
+        saveLocalBackup();
+        refreshAll();
+        clearExpedienteForm();
+        setCloudStatus('Nube: conectada');
+      } catch (error) {
+        console.error('No se pudo guardar el expediente en Firebase', error);
+        alert('No se pudo guardar el expediente en Firebase. Revisa tus reglas de Firestore.');
+        setCloudStatus('Nube: error al guardar');
+      }
+    }
 
-    // ---------- Filtering & sorting ----------
-    function filteredJobs(){
-      const qq = q.value.trim().toLowerCase();
-      const s = fStatus.value;
-      const pr = fPriority.value;
+    async function upsertCita() {
+      const cita = readCitaForm();
+      if (!cita) return;
+      const current = state.citas.find((item) => item.id === cita.id);
+      if (current) cita.notified = false;
+      try {
+        if (state.editingCitaId && state.citas.some((item) => item.id === cita.id)) {
+          const payload = { ...cita };
+          delete payload.id;
+          await updateDoc(doc(db, 'citas', cita.id), payload);
+          const index = state.citas.findIndex((item) => item.id === cita.id);
+          if (index >= 0) state.citas[index] = { ...state.citas[index], ...cita };
+        } else {
+          const payload = { ...cita };
+          delete payload.id;
+          const ref = await addDoc(citasRef, payload);
+          cita.id = ref.id;
+          state.citas.unshift(cita);
+        }
+        saveLocalBackup();
+        refreshAll();
+        clearCitaForm();
+        setCloudStatus('Nube: conectada');
+      } catch (error) {
+        console.error('No se pudo guardar la cita en Firebase', error);
+        alert('No se pudo guardar la cita en Firebase. Revisa tus reglas de Firestore.');
+        setCloudStatus('Nube: error al guardar');
+      }
+    }
 
-      let arr = jobs.filter(j => {
-        const hay = (j.title + " " + (j.client||"") + " " + (j.notes||"")).toLowerCase();
-        if(qq && !hay.includes(qq)) return false;
-        if(s && j.status !== s) return false;
-        if(pr && j.priority !== pr) return false;
-        return true;
+    async function deleteExpediente() {
+      if (!state.editingExpedienteId) return;
+      if (!confirm('¿Eliminar este expediente?')) return;
+      const expId = state.editingExpedienteId;
+      try {
+        await deleteDoc(doc(db, 'expedientes', expId));
+        state.expedientes = state.expedientes.filter((item) => item.id !== expId);
+        state.citas = state.citas.map((cita) => cita.expedienteId === expId ? { ...cita, expedienteId: '' } : cita);
+        saveLocalBackup();
+        refreshAll();
+        clearExpedienteForm();
+        setCloudStatus('Nube: conectada');
+      } catch (error) {
+        console.error('No se pudo eliminar el expediente', error);
+        alert('No se pudo eliminar el expediente en Firebase.');
+        setCloudStatus('Nube: error al eliminar');
+      }
+    }
+
+    async function deleteCita() {
+      if (!state.editingCitaId) return;
+      if (!confirm('¿Eliminar esta cita?')) return;
+      try {
+        await deleteDoc(doc(db, 'citas', state.editingCitaId));
+        state.citas = state.citas.filter((item) => item.id !== state.editingCitaId);
+        saveLocalBackup();
+        refreshAll();
+        clearCitaForm();
+        setCloudStatus('Nube: conectada');
+      } catch (error) {
+        console.error('No se pudo eliminar la cita', error);
+        alert('No se pudo eliminar la cita en Firebase.');
+        setCloudStatus('Nube: error al eliminar');
+      }
+    }
+
+    function populateExpedienteSelects() {
+      const citaSelect = $('citaExpediente');
+      const filterServicio = $('filterServicio');
+      const selectedCitaValue = citaSelect.value;
+      const selectedServiceValue = filterServicio.value;
+
+      citaSelect.innerHTML = '<option value="">Sin vincular</option>';
+      filterServicio.innerHTML = '<option value="">Todos</option>';
+
+      const services = new Set();
+      state.expedientes.forEach((exp) => {
+        services.add(exp.servicio || 'Otro');
+        const option = document.createElement('option');
+        option.value = exp.id;
+        option.textContent = expedienteLabel(exp);
+        citaSelect.appendChild(option);
       });
 
-      const mode = sortBy.value;
-      const byUpdatedDesc = (a,b) => (b.updatedAt||"").localeCompare(a.updatedAt||"");
-      const byProgressDesc = (a,b) => Number(b.progress||0) - Number(a.progress||0);
-      const byDueAsc = (a,b) => {
-        const da = parseDateMaybe(a.dueDate)?.getTime() ?? Infinity;
-        const db = parseDateMaybe(b.dueDate)?.getTime() ?? Infinity;
-        return da - db;
-      };
-      const byApptAsc = (a,b) => {
-        const da = parseDateTimeMaybe(a.apptDate, a.apptTime)?.getTime() ?? Infinity;
-        const db = parseDateTimeMaybe(b.apptDate, b.apptTime)?.getTime() ?? Infinity;
-        return da - db;
-      };
+      Array.from(services).sort().forEach((service) => {
+        const option = document.createElement('option');
+        option.value = service;
+        option.textContent = service;
+        filterServicio.appendChild(option);
+      });
 
-      if(mode === "dueAsc") arr.sort(byDueAsc);
-      else if(mode === "apptAsc") arr.sort(byApptAsc);
-      else if(mode === "progressDesc") arr.sort(byProgressDesc);
-      else arr.sort(byUpdatedDesc);
-
-      return arr;
+      citaSelect.value = selectedCitaValue || '';
+      filterServicio.value = Array.from(filterServicio.options).some((opt) => opt.value === selectedServiceValue) ? selectedServiceValue : '';
     }
 
-    // ---------- Dashboard ----------
-    function computeDashboard(){
-      const all = jobs.length;
-      const open = jobs.filter(j => j.status !== "Terminado" && j.status !== "Cancelado").length;
-
-      const avg = all ? Math.round(jobs.reduce((sum,j)=>sum+Number(j.progress||0),0)/all) : 0;
-
-      // citas en próximos 7 días
+    function renderStats() {
+      const activos = state.expedientes.filter((item) => ['Activo', 'Prospección', 'En espera'].includes(item.status)).length;
       const now = new Date();
-      const in7 = new Date(now.getTime() + 7*24*60*60*1000);
-      const appts = jobs
-        .map(j => ({ j, dt: parseDateTimeMaybe(j.apptDate, j.apptTime) }))
-        .filter(x => x.dt && x.dt >= new Date(toISODate(now)+"T00:00:00") && x.dt <= new Date(toISODate(in7)+"T23:59:59"))
-        .sort((a,b)=>a.dt-b.dt);
+      const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const proximas = state.citas.filter((cita) => {
+        if (!cita.fecha || ['Realizada', 'Cancelada'].includes(cita.status)) return false;
+        const date = new Date(`${cita.fecha}T${cita.hora || '00:00'}:00`);
+        return date >= now && date <= sevenDays;
+      }).length;
+      const cobranza = state.expedientes.reduce((sum, exp) => {
+        if (exp.pagoStatus === 'Pagado') return sum;
+        return sum + getSaldoPendiente(exp);
+      }, 0);
 
-      countAll.textContent = all;
-      countOpen.textContent = open;
-      countAppt.textContent = appts.length;
-      avgProg.textContent = avg + "%";
-
-      if(!appts.length){
-        nextAppts.textContent = "No hay citas en los próximos 7 días.";
-      }else{
-        const lines = appts.slice(0,6).map(x => {
-          const j = x.j;
-          const when = j.apptDate + (j.apptTime ? (" " + j.apptTime) : "");
-          const who = j.client ? (" — " + j.client) : "";
-          return `<div class="click" data-edit="${j.id}" style="padding:8px; border:1px solid var(--line); border-radius:12px; margin-bottom:8px; background:#0b1326">
-                    <div><strong>${escapeHTML(when)}</strong> — ${escapeHTML(j.title)}${escapeHTML(who)}</div>
-                    <div class="small">Estado: ${escapeHTML(j.status)} · Avance: ${escapeHTML(String(j.progress||0))}%</div>
-                  </div>`;
-        }).join("");
-        nextAppts.innerHTML = lines;
-      }
+      $('totalExpedientes').textContent = state.expedientes.length;
+      $('expedientesActivos').textContent = activos;
+      $('citasProximas').textContent = proximas;
+      $('cobranzaPendiente').textContent = money(cobranza);
     }
 
-    // ---------- Rendering ----------
-    function escapeHTML(s){
-      return String(s ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
+    function renderExpedientes() {
+      const search = $('searchExpedientes').value.trim().toLowerCase();
+      const servicio = $('filterServicio').value;
+      const estado = $('filterEstadoExp').value;
+      const prioridad = $('filterPrioridadExp').value;
+      const wrap = $('expedientesList');
 
-    function render(){
-      computeDashboard();
+      const records = [...state.expedientes].filter((exp) => {
+        const haystack = [exp.numero, exp.nombre, exp.cliente, exp.servicio, exp.direccion, exp.municipio].join(' ').toLowerCase();
+        if (search && !haystack.includes(search)) return false;
+        if (servicio && exp.servicio !== servicio) return false;
+        if (estado && exp.status !== estado) return false;
+        if (prioridad && exp.prioridad !== prioridad) return false;
+        return true;
+      }).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
 
-      const arr = filteredJobs();
-      if(!arr.length){
-        tbody.innerHTML = `<tr><td colspan="5" class="small">No hay trabajos con esos filtros.</td></tr>`;
+      if (!records.length) {
+        wrap.innerHTML = '<div class="empty-state">No hay expedientes con esos filtros.</div>';
         return;
       }
 
-      tbody.innerHTML = arr.map(j => {
-        const stClass = tagClassStatus(j.status);
-        const prClass = tagClassPriority(j.priority);
-
-        const prog = Number(j.progress || 0);
-        const due = j.dueDate || "—";
-        const ap = fmtAppt(j);
-
-        const clientLine = j.client ? `<div class="small">${escapeHTML(j.client)}</div>` : "";
-        const noteLine = j.notes ? `<div class="small">${escapeHTML(j.notes).slice(0,80)}${j.notes.length>80 ? "…" : ""}</div>` : "";
-
+      wrap.innerHTML = records.map((exp) => {
+        const prioridadClass = `priority-${(exp.prioridad || '').toLowerCase()}`;
+        const pagoClass = `payment-${(exp.pagoStatus || '').toLowerCase().replace(/\s+/g, '-')}`;
         return `
-          <tr>
-            <td class="click" data-edit="${escapeHTML(j.id)}">
-              <div><strong>${escapeHTML(j.title)}</strong></div>
-              ${clientLine}
-              <div class="progress" aria-label="avance"><div style="width:${prog}%"></div></div>
-              <div class="small">Avance: <span class="mono">${escapeHTML(String(prog))}%</span> · Actualizado: <span class="mono">${escapeHTML((j.updatedAt||"").slice(0,19).replace("T"," "))}</span></div>
-              ${noteLine}
-            </td>
-            <td>
-              <div class="tag ${stClass}">${escapeHTML(j.status)}</div>
-              <div style="height:6px"></div>
-              <div class="tag ${prClass}">${escapeHTML(j.priority)}</div>
-            </td>
-            <td><span class="mono">${escapeHTML(ap)}</span></td>
-            <td><span class="mono">${escapeHTML(due)}</span></td>
-            <td>
-              <div class="actions">
-                <button data-edit="${escapeHTML(j.id)}">Editar</button>
-                <button class="danger" data-del="${escapeHTML(j.id)}">Eliminar</button>
+          <article class="record-card">
+            <div class="record-top">
+              <div>
+                <h3>${expedienteLabel(exp)}</h3>
+                <div class="subtle">${exp.cliente || 'Sin cliente'} · ${exp.direccion || 'Sin dirección'}</div>
               </div>
-            </td>
-          </tr>
+              <div class="record-actions">
+                <button class="small-btn secondary" data-action="edit-expediente" data-id="${exp.id}">Editar</button>
+              </div>
+            </div>
+            <div class="badge-row">
+              <span class="badge service">${exp.servicio || 'Otro'}</span>
+              <span class="badge status">${exp.status || 'Activo'}</span>
+              <span class="badge ${prioridadClass}">${exp.prioridad || 'Media'}</span>
+              <span class="badge ${pagoClass}">${exp.pagoStatus || 'Pendiente'}</span>
+              <span class="badge pending">En espera de: ${exp.esperaDe || 'Nadie'}</span>
+            </div>
+            <div class="progress-block">
+              <strong>Avance ${Number(exp.avance || 0)}%</strong>
+              <div class="progress-bar"><div class="progress-fill" style="width:${Number(exp.avance || 0)}%"></div></div>
+            </div>
+            <div class="two-col">
+              <div class="info-box">
+                <strong>Operación</strong>
+                <div class="subtle">Etapa: ${exp.etapa || 'No definida'}</div>
+                <div class="subtle">Inicio: ${formatDate(exp.fechaInicio)}</div>
+                <div class="subtle">Entrega: ${formatDate(exp.fechaEntrega)}</div>
+                <div class="subtle">Pendiente: ${exp.pendiente || 'Sin bloqueos registrados'}</div>
+              </div>
+              <div class="info-box">
+                <strong>Cobranza</strong>
+                <div class="subtle">Cotización: ${money(exp.cotizacion)}</div>
+                <div class="subtle">Anticipo: ${money(exp.anticipo)}</div>
+                <div class="subtle">Saldo: ${money(getSaldoPendiente(exp))}</div>
+                <div class="subtle">Contacto: ${exp.contacto || 'Sin contacto'} ${exp.correo ? `· ${exp.correo}` : ''}</div>
+              </div>
+            </div>
+            <div class="info-box">
+              <strong>Documentos y notas</strong>
+              <div class="subtle">Documentos: ${exp.documentos || 'Sin documentos registrados'}</div>
+              <div class="subtle">Notas: ${exp.notas || 'Sin notas internas'}</div>
+            </div>
+          </article>
         `;
-      }).join("");
+      }).join('');
     }
 
-    // ---------- Click handlers (event delegation) ----------
-    document.addEventListener("click", (e) => {
-      const editId = e.target?.dataset?.edit;
-      const delId = e.target?.dataset?.del;
+    function renderCitas() {
+      const search = $('searchCitas').value.trim().toLowerCase();
+      const tipo = $('filterTipoCita').value;
+      const estado = $('filterEstadoCita').value;
+      const proximidad = $('filterProximidadCita').value;
+      const wrap = $('citasList');
+      const now = new Date();
 
-      if(editId){
-        const job = jobs.find(j => j.id === editId);
-        if(job) loadToForm(job);
+      const records = [...state.citas].filter((cita) => {
+        const expediente = getExpedienteById(cita.expedienteId);
+        const expText = expediente ? expedienteLabel(expediente) : '';
+        const haystack = [cita.titulo, cita.tipo, cita.responsable, cita.lugar, expText].join(' ').toLowerCase();
+        if (search && !haystack.includes(search)) return false;
+        if (tipo && cita.tipo !== tipo) return false;
+        if (estado && cita.status !== estado) return false;
+        if (proximidad) {
+          const citaDate = new Date(`${cita.fecha}T${cita.hora || '00:00'}:00`);
+          if (proximidad === 'hoy') {
+            const sameDay = citaDate.toDateString() === now.toDateString();
+            if (!sameDay) return false;
+          }
+          if (proximidad === '7') {
+            const limit = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            if (!(citaDate >= now && citaDate <= limit)) return false;
+          }
+          if (proximidad === '30') {
+            const limit = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+            if (!(citaDate >= now && citaDate <= limit)) return false;
+          }
+        }
+        return true;
+      }).sort((a, b) => {
+        const da = new Date(`${a.fecha}T${a.hora || '00:00'}:00`).getTime();
+        const db = new Date(`${b.fecha}T${b.hora || '00:00'}:00`).getTime();
+        return da - db;
+      });
+
+      if (!records.length) {
+        wrap.innerHTML = '<div class="empty-state">No hay citas con esos filtros.</div>';
+        return;
       }
-      if(delId){
-        deleteJob(delId);
+
+      wrap.innerHTML = records.map((cita) => {
+        const expediente = getExpedienteById(cita.expedienteId);
+        return `
+          <article class="record-card">
+            <div class="record-top">
+              <div>
+                <h3>${cita.titulo}</h3>
+                <div class="subtle">${formatDateTime(cita.fecha, cita.hora)} · ${cita.lugar || 'Sin lugar definido'}</div>
+              </div>
+              <div class="record-actions">
+                <button class="small-btn secondary" data-action="edit-cita" data-id="${cita.id}">Editar</button>
+              </div>
+            </div>
+            <div class="badge-row">
+              <span class="badge service">${cita.tipo || 'Otro'}</span>
+              <span class="badge status">${cita.status || 'Programada'}</span>
+              <span class="badge pending">Recordatorio: ${cita.reminder || 60} min antes</span>
+            </div>
+            <div class="two-col">
+              <div class="info-box">
+                <strong>Detalle de cita</strong>
+                <div class="subtle">Responsable: ${cita.responsable || 'Sin responsable'}</div>
+                <div class="subtle">Expediente: ${expediente ? expedienteLabel(expediente) : 'Sin vincular'}</div>
+                <div class="subtle">Estado: ${cita.status || 'Programada'}</div>
+              </div>
+              <div class="info-box">
+                <strong>Notas</strong>
+                <div class="subtle">${cita.notas || 'Sin notas'}</div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function clearReminderTimers() {
+      state.reminderTimers.forEach((timer) => clearTimeout(timer));
+      state.reminderTimers = [];
+    }
+
+    function scheduleNotifications() {
+      clearReminderTimers();
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+
+      const now = Date.now();
+      state.citas.forEach((cita) => {
+        if (!cita.fecha || ['Realizada', 'Cancelada'].includes(cita.status)) return;
+        const citaTime = new Date(`${cita.fecha}T${cita.hora || '00:00'}:00`).getTime();
+        const remindAt = citaTime - (Number(cita.reminder || 60) * 60 * 1000);
+        const delay = remindAt - now;
+        if (delay <= 0 || delay > 2147483647) return;
+        const timer = setTimeout(() => {
+          const expediente = getExpedienteById(cita.expedienteId);
+          new Notification(`Recordatorio: ${cita.titulo}`, {
+            body: `${formatDateTime(cita.fecha, cita.hora)} · ${cita.lugar || 'Sin lugar'}${expediente ? ` · ${expedienteLabel(expediente)}` : ''}`
+          });
+        }, delay);
+        state.reminderTimers.push(timer);
+      });
+    }
+
+    async function enableNotifications() {
+      if (!('Notification' in window)) {
+        alert('Tu navegador no soporta notificaciones.');
+        return;
       }
-    });
-
-    // filter inputs
-    [q, fStatus, fPriority, sortBy].forEach(inp => inp.addEventListener("input", render));
-    [fStatus, fPriority, sortBy].forEach(inp => inp.addEventListener("change", render));
-
-    // ---------- Export / Import ----------
-    const exportBtn = el("exportBtn");
-    const importBtn = el("importBtn");
-    const importFile = el("importFile");
-
-    exportBtn.addEventListener("click", () => {
-      const payload = {
-        app: "registro_trabajos",
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        jobs
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "registro_trabajos_backup.json";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 500);
-    });
-
-    importBtn.addEventListener("click", () => importFile.click());
-
-    importFile.addEventListener("change", async () => {
-      const file = importFile.files?.[0];
-      if(!file) return;
-
-      try{
-        const text = await file.text();
-        const data = JSON.parse(text);
-
-        const incoming = Array.isArray(data) ? data : data.jobs;
-        if(!Array.isArray(incoming)) throw new Error("Formato inválido.");
-
-        if(!confirm("Esto reemplazará tu lista actual por lo del archivo. ¿Continuar?")) return;
-
-        // normaliza
-        jobs = incoming.map(x => ({
-          id: x.id || uid(),
-          title: x.title || "Sin título",
-          client: x.client || "",
-          priority: x.priority || "Media",
-          status: x.status || "Pendiente",
-          dueDate: x.dueDate || "",
-          apptDate: x.apptDate || "",
-          apptTime: x.apptTime || "",
-          progress: Number(x.progress ?? 0),
-          notes: x.notes || "",
-          createdAt: x.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }));
-
-        safeJSON.save(jobs);
-        render();
-        clearForm();
-      }catch(err){
-        alert("No se pudo importar: " + (err?.message || "error"));
-      }finally{
-        importFile.value = "";
+      const result = await Notification.requestPermission();
+      if (result === 'granted') {
+        scheduleNotifications();
+        alert('Notificaciones activadas. Recibirás recordatorios de las citas mientras la app esté abierta.');
+      } else {
+        alert('No se concedió permiso para notificaciones.');
       }
-    });
+    }
 
-    // ---------- Initial paint ----------
-    setProgressUI(0);
-    render();
+    function setFormTab(tab) {
+      const isExp = tab === 'expediente';
+      $('expedienteFormSection').classList.toggle('hidden', !isExp);
+      $('citaFormSection').classList.toggle('hidden', isExp);
+      document.querySelectorAll('[data-form-tab]').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.formTab === tab);
+      });
+    }
+
+    function setViewTab(tab) {
+      const isExp = tab === 'expedientes';
+      $('expedientesViewSection').classList.toggle('hidden', !isExp);
+      $('citasViewSection').classList.toggle('hidden', isExp);
+      document.querySelectorAll('[data-view-tab]').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.viewTab === tab);
+      });
+    }
+
+    function handleCardActions(event) {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+      const { action, id } = button.dataset;
+      if (action === 'edit-expediente') {
+        const exp = getExpedienteById(id);
+        if (exp) fillExpedienteForm(exp);
+      }
+      if (action === 'edit-cita') {
+        const cita = state.citas.find((item) => item.id === id);
+        if (cita) fillCitaForm(cita);
+      }
+    }
+
+    function bindEvents() {
+      $('saveExpedienteBtn').addEventListener('click', upsertExpediente);
+      $('clearExpedienteBtn').addEventListener('click', clearExpedienteForm);
+      $('deleteExpedienteBtn').addEventListener('click', deleteExpediente);
+      $('saveCitaBtn').addEventListener('click', upsertCita);
+      $('clearCitaBtn').addEventListener('click', clearCitaForm);
+      $('deleteCitaBtn').addEventListener('click', deleteCita);
+      $('enableNotificationsBtn').addEventListener('click', enableNotifications);
+
+      document.querySelectorAll('[data-form-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => setFormTab(btn.dataset.formTab));
+      });
+      document.querySelectorAll('[data-view-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => setViewTab(btn.dataset.viewTab));
+      });
+
+      ['searchExpedientes', 'filterServicio', 'filterEstadoExp', 'filterPrioridadExp'].forEach((id) => {
+        $(id).addEventListener('input', renderExpedientes);
+        $(id).addEventListener('change', renderExpedientes);
+      });
+      ['searchCitas', 'filterTipoCita', 'filterEstadoCita', 'filterProximidadCita'].forEach((id) => {
+        $(id).addEventListener('input', renderCitas);
+        $(id).addEventListener('change', renderCitas);
+      });
+
+      $('expedientesList').addEventListener('click', handleCardActions);
+      $('citasList').addEventListener('click', handleCardActions);
+    }
+
+    function refreshAll() {
+      populateExpedienteSelects();
+      renderStats();
+      renderExpedientes();
+      renderCitas();
+      scheduleNotifications();
+    }
+
+    function init() {
+      loadData();
+      bindEvents();
+      clearExpedienteForm();
+      clearCitaForm();
+      setFormTab('expediente');
+      setViewTab('expedientes');
+      refreshAll();
+    }
+
+    init();
   </script>
 </body>
 </html>
