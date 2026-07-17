@@ -1,1530 +1,1737 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Expedientes y Citas</title>
-  <style>
-    :root {
-      --bg: #111827;
-      --bg-soft: #1f2937;
-      --panel: #ffffff;
-      --panel-soft: #f3f4f6;
-      --line: #d1d5db;
-      --text: #111827;
-      --muted: #6b7280;
-      --primary: #1d4ed8;
-      --primary-dark: #1e3a8a;
-      --success: #166534;
-      --warning: #b45309;
-      --danger: #b91c1c;
-      --shadow: 0 14px 34px rgba(17, 24, 39, 0.08);
-      --radius: 14px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #eef1f5;
-      color: var(--text);
-    }
-
-    #app {
-      min-height: 100vh;
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      padding: 22px 28px;
-      background: linear-gradient(90deg, #0f172a, #1f2937);
-      border-bottom: 4px solid #1d4ed8;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
-    }
-
-    .topbar h1 {
-      margin: 0;
-      font-size: 29px;
-      color: #ffffff;
-      letter-spacing: 0.2px;
-    }
-
-    .topbar p {
-      margin: 6px 0 0;
-      color: #cbd5e1;
-      font-size: 14px;
-    }
-
-    .topbar-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    main {
-      max-width: 1480px;
-      margin: 0 auto;
-      padding: 28px;
-    }
-
-    .dashboard {
-      display: grid;
-      grid-template-columns: 1fr 1.2fr;
-      gap: 22px;
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-      padding: 18px 22px 14px;
-      border-bottom: 1px solid var(--line);
-      background: linear-gradient(180deg, #f9fafb, #f3f4f6);
-    }
-
-    .panel-header h2,
-    .panel-header h3 {
-      margin: 0;
-      font-size: 20px;
-      color: #0f172a;
-    }
-
-    .panel-header p {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .panel-body {
-      padding: 20px 22px 22px;
-      background: #ffffff;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-bottom: 22px;
-    }
-
-    .stat-card {
-      background: linear-gradient(180deg, #ffffff, #f9fafb);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 18px;
-    }
-
-    .stat-card span {
-      display: block;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-
-    .stat-card strong {
-      font-size: 30px;
-      display: block;
-      color: #111827;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 18px;
-    }
-
-    .tab-btn,
-    button,
-    .ghost-btn,
-    .small-btn {
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: 0.2s ease;
-      font-weight: 600;
-    }
-
-    .tab-btn,
-    button {
-      padding: 11px 15px;
-    }
-
-    .tab-btn {
-      background: #e2e8f0;
-      color: #334155;
-    }
-
-    .tab-btn.active {
-      background: var(--primary);
-      color: white;
-    }
-
-    button {
-      background: var(--primary);
-      color: white;
-    }
-
-    button:hover,
-    .tab-btn:hover,
-    .ghost-btn:hover,
-    .small-btn:hover {
-      transform: translateY(-1px);
-      filter: brightness(0.98);
-    }
-
-    .ghost-btn {
-      background: white;
-      color: var(--text);
-      border: 1px solid var(--line);
-      padding: 10px 14px;
-    }
-
-    .small-btn {
-      padding: 8px 10px;
-      background: #eff6ff;
-      color: #0f172a;
-      border: 1px solid #bfdbfe;
-      font-size: 12px;
-    }
-
-    .small-btn.danger {
-      background: #fef2f2;
-      border-color: #fecaca;
-      color: #991b1b;
-    }
-
-    .small-btn.secondary {
-      background: #f8fafc;
-      border-color: var(--line);
-      color: #334155;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .section-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .field,
-    .field-full {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .field-full {
-      grid-column: 1 / -1;
-    }
-
-    label {
-      font-size: 13px;
-      color: #334155;
-      font-weight: 700;
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px 13px;
-      font-size: 14px;
-      background: white;
-      color: var(--text);
-    }
-
-    textarea {
-      min-height: 96px;
-      resize: vertical;
-    }
-
-    .actions-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 18px;
-    }
-
-    .hint-box,
-    .notice-box,
-    .list-card,
-    .agenda-card {
-      border-radius: 16px;
-      padding: 16px;
-      border: 1px solid var(--line);
-      background: var(--panel-soft);
-    }
-
-    .hint-box p,
-    .notice-box p,
-    .list-card p,
-    .agenda-card p {
-      margin: 8px 0 0;
-      color: var(--muted);
-      line-height: 1.5;
-      font-size: 13px;
-    }
-
-    .notice-box.success {
-      background: #f0fdf4;
-      border-color: #bbf7d0;
-    }
-
-    .notice-box.warning {
-      background: #fff7ed;
-      border-color: #fed7aa;
-    }
-
-    .toolbar {
-      display: grid;
-      grid-template-columns: 1.2fr 0.9fr 0.9fr 0.9fr;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .list-wrap {
-      display: grid;
-      gap: 14px;
-      max-height: 760px;
-      overflow: auto;
-      padding-right: 4px;
-    }
-
-    .record-card {
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 18px;
-      background: linear-gradient(180deg, #ffffff, #fbfdff);
-      display: grid;
-      gap: 14px;
-    }
-
-    .record-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-    }
-
-    .record-top h3 {
-      margin: 0;
-      font-size: 20px;
-    }
-
-    .subtle {
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .badge-row,
-    .meta-row,
-    .record-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      border: 1px solid transparent;
-    }
-
-    .badge.service { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-    .badge.status { background: #f8fafc; color: #334155; border-color: #cbd5e1; }
-    .badge.priority-alta,
-    .badge.priority-urgente { background: #fff7ed; color: #c2410c; border-color: #fdba74; }
-    .badge.priority-media { background: #ecfeff; color: #0f766e; border-color: #99f6e4; }
-    .badge.priority-baja { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
-    .badge.payment-pendiente { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
-    .badge.payment-parcial { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
-    .badge.payment-pagado { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
-    .badge.payment-no-facturado { background: #f8fafc; color: #475569; border-color: #cbd5e1; }
-    .badge.pending { background: #fefce8; color: #854d0e; border-color: #fde68a; }
-
-    .progress-block {
-      display: grid;
-      gap: 8px;
-    }
-
-    .progress-bar {
-      width: 100%;
-      height: 12px;
-      border-radius: 999px;
-      background: #e2e8f0;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary), #22c55e);
-    }
-
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .info-box {
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-    }
-
-    .info-box strong {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 13px;
-    }
-
-    .inline-list {
-      display: grid;
-      gap: 8px;
-    }
-
-    .mini-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: white;
-    }
-
-    .mini-item h4 {
-      margin: 0 0 4px;
-      font-size: 15px;
-    }
-
-    .empty-state {
-      padding: 28px;
-      text-align: center;
-      color: var(--muted);
-      border: 1px dashed var(--line);
-      border-radius: 16px;
-      background: #fbfdff;
-    }
-
-    .linkish {
-      color: var(--primary-dark);
-      text-decoration: underline;
-      cursor: pointer;
-    }
-
-    .footer-note {
-      margin-top: 18px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    @media (max-width: 1180px) {
-      .dashboard,
-      .toolbar,
-      .stats,
-      .section-grid,
-      .two-col {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    @media (max-width: 840px) {
-      .topbar,
-      .record-top,
-      .mini-item {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      main,
-      .panel-body,
-      .panel-header,
-      .topbar {
-        padding-left: 16px;
-        padding-right: 16px;
-      }
-
-      .dashboard,
-      .toolbar,
-      .stats,
-      .section-grid,
-      .two-col {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div id="app">
-    <header class="topbar">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+:root{
+  --paper:#F3EEE2;
+  --paper-line: rgba(47,93,115,0.08);
+  --ink:#1B2420;
+  --ink-soft:#5B6660;
+  --navy:#16232B;
+  --navy-line: rgba(120,190,210,0.14);
+  --blue:#2F5D73;
+  --blue-soft:#DCE7EA;
+  --brick:#A64B2A;
+  --brick-soft:#F1DFD5;
+  --ochre:#B5842A;
+  --ochre-soft:#F3E7D0;
+  --moss:#4F7A52;
+  --moss-soft:#DEE8DD;
+  --card:#FBF9F3;
+  --border:#DCD4C0;
+  --radius:10px;
+}
+
+*{box-sizing:border-box;}
+body{margin:0;padding:0;}
+#gaba-root{
+  font-family:'Inter',sans-serif;
+  color:var(--ink);
+  background:
+    linear-gradient(var(--paper-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-line) 1px, transparent 1px),
+    var(--paper);
+  background-size:26px 26px;
+  min-height:640px;
+  display:flex;
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+
+/* ---------- Sidebar ---------- */
+.gh-sidebar{
+  width:198px;
+  flex-shrink:0;
+  background:
+    linear-gradient(var(--navy-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--navy-line) 1px, transparent 1px),
+    var(--navy);
+  background-size:18px 18px;
+  color:#EDEFEA;
+  padding:22px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:26px;
+}
+.gh-logo{display:flex; align-items:center; gap:9px;}
+.gh-logo svg{flex-shrink:0;}
+.gh-logo-text{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; letter-spacing:0.5px; line-height:1.15;}
+.gh-logo-text span{display:block; font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:9.5px; color:#8FB4C2; letter-spacing:1.5px; margin-top:2px;}
+
+.gh-nav{display:flex; flex-direction:column; gap:3px;}
+.gh-nav-item{
+  display:flex; align-items:center; gap:9px;
+  padding:9px 10px; border-radius:7px;
+  font-size:13px; font-weight:500; color:#C7D0CC;
+  cursor:pointer; border:none; background:transparent; text-align:left; width:100%;
+  font-family:'Inter',sans-serif;
+  transition:background .12s ease, color .12s ease;
+}
+.gh-nav-item:hover{background:rgba(255,255,255,0.06); color:#fff;}
+.gh-nav-item.active{background:var(--blue); color:#fff;}
+.gh-nav-item svg{flex-shrink:0; opacity:.9;}
+
+.gh-sidebar-foot{margin-top:auto; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#6E8790; line-height:1.5;}
+
+/* ---------- Main ---------- */
+.gh-main{flex:1; padding:26px 30px; overflow-y:auto; max-height:900px;}
+.gh-topbar{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:22px;}
+.gh-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px; margin:0;}
+.gh-subtitle{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); margin-top:4px; text-transform:uppercase; letter-spacing:.5px;}
+
+.gh-btn{
+  font-family:'Inter',sans-serif; font-weight:600; font-size:13px;
+  background:var(--brick); color:#fff; border:none; border-radius:7px;
+  padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+  transition:filter .12s ease;
+}
+.gh-btn:hover{filter:brightness(1.08);}
+.gh-btn.secondary{background:transparent; color:var(--ink); border:1.4px solid var(--border);}
+.gh-btn.small{padding:5px 10px; font-size:11.5px; border-radius:6px;}
+.gh-btn.ghost{background:transparent; color:var(--ink-soft); padding:5px 8px;}
+
+/* Stat cards */
+.gh-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:26px;}
+.gh-stat{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 16px 14px; position:relative;
+}
+.gh-stat-num{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:28px; line-height:1;}
+.gh-stat-label{font-size:11.5px; color:var(--ink-soft); margin-top:6px; font-weight:500;}
+.gh-stat-pin{
+  position:absolute; top:12px; right:12px; width:20px; height:20px; border-radius:50%;
+  border:1.6px solid var(--ink-soft); display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--ink-soft);
+}
+
+.gh-section{margin-bottom:28px;}
+.gh-section-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+.gh-section-title{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15.5px;}
+
+/* Stamp signature */
+.gh-stamp{
+  display:inline-block; padding:3px 11px; border:2.5px double currentColor; border-radius:5px;
+  font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:10px; letter-spacing:1px;
+  text-transform:uppercase; white-space:nowrap;
+}
+.gh-stamp.pendiente{color:var(--ochre); transform:rotate(-4deg);}
+.gh-stamp.en_presupuesto{color:#8A5D18; transform:rotate(-2deg);}
+.gh-stamp.gestoria{color:#5C4A8A; transform:rotate(-5deg);}
+.gh-stamp.en_proceso{color:var(--blue); transform:rotate(-3deg);}
+.gh-stamp.terminado{color:var(--moss); transform:rotate(-5deg);}
+
+.gh-tag{
+  display:inline-block; font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:20px;
+  font-family:'IBM Plex Mono',monospace; letter-spacing:.3px;
+}
+
+/* Job card */
+.gh-job{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:15px 16px; margin-bottom:10px; display:flex; flex-direction:column; gap:9px;
+}
+.gh-job-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+.gh-job-title{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px;}
+.gh-job-meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+.gh-progress-track{background:var(--border); height:6px; border-radius:4px; overflow:hidden;}
+.gh-progress-fill{height:100%; background:var(--blue); border-radius:4px;}
+.gh-job-foot{display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--ink-soft);}
+.gh-job-actions{display:flex; gap:6px;}
+
+/* Appointment row */
+.gh-appt{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:12px 16px; display:flex; align-items:center; gap:14px; margin-bottom:9px;
+}
+.gh-appt-date{
+  font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:12px; text-align:center;
+  background:var(--blue-soft); color:var(--blue); border-radius:7px; padding:6px 10px; min-width:56px;
+}
+.gh-appt-badge{
+  font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; padding:2px 8px;
+  border-radius:20px; text-transform:uppercase; letter-spacing:.4px;
+}
+.gh-appt-body{flex:1;}
+.gh-appt-title{font-weight:600; font-size:13.5px;}
+.gh-appt-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+
+.gh-empty{
+  border:1.5px dashed var(--border); border-radius:var(--radius); padding:26px; text-align:center;
+  color:var(--ink-soft); font-size:13px;
+}
+
+.gh-filters{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+.gh-chip{
+  font-size:12px; font-weight:500; padding:5px 12px; border-radius:20px; border:1.4px solid var(--border);
+  background:transparent; cursor:pointer; color:var(--ink-soft); font-family:'Inter',sans-serif;
+}
+.gh-chip.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+.gh-wa-btn{
+  background:#EAF5EE; color:#2E7D4F; border:1px solid #C9E6D3;
+  font-family:'Inter',sans-serif; font-weight:600; font-size:11.5px; border-radius:6px;
+  padding:5px 10px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+}
+.gh-wa-btn:hover{filter:brightness(0.97);}
+
+/* Budget items table */
+.gh-item-row{display:grid; grid-template-columns:1fr 90px 30px; gap:8px; margin-bottom:7px; align-items:center;}
+.gh-item-remove{background:transparent; border:none; color:var(--brick); cursor:pointer; font-size:16px; line-height:1;}
+.gh-budget-total{
+  display:flex; justify-content:space-between; align-items:center; padding-top:10px; margin-top:6px;
+  border-top:1.4px dashed var(--border); font-family:'IBM Plex Mono',monospace;
+}
+.gh-budget-total .label{color:var(--ink-soft); font-size:12px;}
+.gh-budget-total .value{font-weight:700; font-size:16px; color:var(--ink);}
+.gh-budget-card{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:15px 16px; margin-bottom:10px;
+}
+.gh-budget-status{
+  font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; padding:3px 9px;
+  border-radius:20px; text-transform:uppercase; letter-spacing:.4px;
+}
+
+/* Team */
+.gh-team-card{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 16px; display:flex; align-items:center; gap:12px; margin-bottom:9px;
+}
+.gh-avatar{
+  width:38px; height:38px; border-radius:50%; background:var(--blue-soft); color:var(--blue);
+  display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif;
+  font-weight:700; font-size:14px; flex-shrink:0;
+}
+
+/* Modal */
+.gh-overlay{
+  position:fixed; inset:0; background:rgba(22,35,43,0.45); display:flex; align-items:center; justify-content:center;
+  z-index:50; padding:20px;
+}
+.gh-modal{
+  background:var(--card); border-radius:14px; padding:24px 26px; width:420px; max-width:100%;
+  max-height:85vh; overflow-y:auto; border:1px solid var(--border);
+}
+.gh-modal-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px; margin-bottom:16px;}
+.gh-field{margin-bottom:13px;}
+.gh-label{font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; display:block;}
+.gh-input, .gh-select, .gh-textarea{
+  width:100%; padding:9px 10px; border-radius:7px; border:1.4px solid var(--border);
+  font-family:'Inter',sans-serif; font-size:13px; background:#fff; color:var(--ink);
+}
+.gh-textarea{resize:vertical; min-height:56px;}
+.gh-row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.gh-modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
+.gh-range-val{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--blue); font-weight:600;}
+
+@media (max-width:720px){
+  #gaba-root{flex-direction:column;}
+  .gh-sidebar{width:100%; flex-direction:row; align-items:center; padding:14px 16px; gap:14px; overflow-x:auto;}
+  .gh-nav{flex-direction:row;}
+  .gh-sidebar-foot{display:none;}
+  .gh-stats{grid-template-columns:repeat(2,1fr);}
+  .gh-main{padding:18px;}
+  .gh-row2{grid-template-columns:1fr;}
+}
+
+/* Tasks */
+.gh-task-row{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:12px 16px; display:flex; align-items:center; gap:12px; margin-bottom:9px;
+}
+.gh-task-row.done{opacity:.55;}
+.gh-checkbox{width:19px; height:19px; accent-color:var(--moss); cursor:pointer; flex-shrink:0;}
+.gh-task-title{font-weight:600; font-size:13.5px;}
+.gh-task-title.done{text-decoration:line-through;}
+.gh-task-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+
+/* Client cards */
+.gh-client-card{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 16px; display:flex; align-items:center; gap:12px; margin-bottom:9px;
+}
+
+/* Payments */
+.gh-payment-row{display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:4px 0; color:var(--ink-soft);}
+.gh-paid-line{display:flex; justify-content:space-between; font-size:12.5px; padding-top:6px; margin-top:4px; border-top:1px dashed var(--border);}
+
+/* Bitácora */
+.gh-log-entry{display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12.5px;}
+.gh-log-entry:last-child{border-bottom:none;}
+.gh-log-time{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); font-size:10.5px; white-space:nowrap; padding-top:1px;}
+
+/* Print */
+#gh-print-area{display:none;}
+@media print{
+  #gaba-root{display:none;}
+  #gh-print-area{display:block; font-family:'Inter',sans-serif; color:#1B2420; padding:24px;}
+  .gh-print-head{display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px double #16232B; padding-bottom:14px; margin-bottom:18px;}
+  .gh-print-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;}
+  .gh-print-table{width:100%; border-collapse:collapse; margin-top:14px;}
+  .gh-print-table th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#5B6660; border-bottom:1.5px solid #DCD4C0; padding:6px 4px;}
+  .gh-print-table td{padding:8px 4px; border-bottom:1px solid #ECE7DA; font-size:13px;}
+  .gh-print-total{display:flex; justify-content:flex-end; gap:30px; margin-top:16px; font-family:'IBM Plex Mono',monospace;}
+}
+
+/* Global search */
+.gh-search-wrap{position:relative; margin-bottom:20px;}
+.gh-search-input{
+  width:100%; padding:11px 14px 11px 38px; border-radius:9px; border:1.4px solid var(--border);
+  font-family:'Inter',sans-serif; font-size:13.5px; background:var(--card); color:var(--ink);
+}
+.gh-search-icon{position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--ink-soft); pointer-events:none;}
+.gh-search-result{
+  background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px;
+  margin-bottom:7px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+}
+.gh-search-result:hover{border-color:var(--blue);}
+.gh-search-kind{font-family:'IBM Plex Mono',monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft);}
+
+/* Priority & atraso badges */
+.gh-priority-urgente{
+  font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; color:#fff; background:var(--brick);
+  padding:2px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.4px;
+}
+.gh-atraso{
+  font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; color:#fff; background:#C0392B;
+  padding:2px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.4px;
+}
+.gh-folio{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); letter-spacing:.3px;}
+.gh-maps-link{font-size:11.5px; color:var(--blue); text-decoration:none; display:inline-flex; align-items:center; gap:4px;}
+.gh-maps-link:hover{text-decoration:underline;}
+
+/* Checklist */
+.gh-check-item{display:flex; align-items:center; gap:9px; padding:5px 0; font-size:13px;}
+.gh-check-item.done{color:var(--ink-soft); text-decoration:line-through;}
+
+/* Reports */
+.gh-report-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;}
+.gh-report-row:last-child{border-bottom:none;}
+</style>
+
+<div id="gaba-root"></div>
+<div id="gh-print-area"></div>
+
+<script>
+(function(){
+
+const TYPES = [
+  {id:'avaluo', label:'Avalúo'},
+  {id:'plano', label:'Plano'},
+  {id:'tramite', label:'Trámite'},
+  {id:'topografia', label:'Topografía'},
+  {id:'agrimensura', label:'Agrimensura'},
+  {id:'otro', label:'Otro'}
+];
+const TYPE_COLORS = {
+  avaluo:{bg:'#F3E7D0',fg:'#8A5D18'}, plano:{bg:'#DCE7EA',fg:'#2F5D73'},
+  tramite:{bg:'#F1DFD5',fg:'#A64B2A'}, topografia:{bg:'#DEE8DD',fg:'#4F7A52'},
+  agrimensura:{bg:'#E4DEF0',fg:'#5C4A8A'}, otro:{bg:'#E9E4D8',fg:'#5B6660'}
+};
+const STATUS = {en_presupuesto:'En presupuesto', pendiente:'Pendiente', gestoria:'En gestoría', en_proceso:'En proceso', terminado:'Terminado'};
+const ROLES = ['Arquitecto/a','Ingeniero/a','Topógrafo/a','Administrativo/a','Otro'];
+const REMINDER_OPTS = [
+  {id:'none', label:'Sin recordatorio'},
+  {id:'sameday', label:'El mismo día'},
+  {id:'1day', label:'1 día antes'},
+  {id:'2day', label:'2 días antes'}
+];
+const BUDGET_STATUS = {borrador:'Borrador', enviado:'Enviado', aprobado:'Aprobado', rechazado:'Rechazado'};
+const BUDGET_STATUS_COLOR = {
+  borrador:{bg:'#E9E4D8',fg:'#5B6660'}, enviado:{bg:'#DCE7EA',fg:'#2F5D73'},
+  aprobado:{bg:'#DEE8DD',fg:'#4F7A52'}, rechazado:{bg:'#F1DFD5',fg:'#A64B2A'}
+};
+const CHECKLIST_TEMPLATES = {
+  tramite: ['Escritura o título de propiedad','INE del propietario','CURP','Comprobante de domicilio','Pago de derechos'],
+  avaluo: ['Escritura o título','Boleta predial','INE del propietario'],
+  plano: ['Levantamiento previo del predio','Datos y medidas del terreno'],
+  topografia: ['Croquis o plano de referencia','Escritura o antecedente del predio'],
+  agrimensura: ['Croquis o plano de referencia','Escritura o antecedente del predio'],
+  otro: []
+};
+const PRIORITIES = {normal:'Normal', urgente:'Urgente'};
+
+let state = {
+  view:'dashboard',
+  loading:true,
+  jobs:[], appointments:[], team:[], budgets:[], clients:[], tasks:[],
+  modal:null, // 'job' | 'appt' | 'team' | 'budget' | 'client' | 'task' | 'payment'
+  editingId:null,
+  paymentTargetId:null,
+  selectedClientName:null,
+  searchQuery:'',
+  draft:{},
+  filterType:'todos', filterStatus:'todos'
+};
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+const FB = {
+  projectId: "gaba-home-e5d12",
+  apiKey: "AIzaSyC5E3AgtVwGh684u-o1T-Tz7ef1G9PmonE"
+};
+const FB_COLLECTION = 'gaba_home_data';
+function fbUrl(key){
+  return `https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents/${FB_COLLECTION}/${key}?key=${FB.apiKey}`;
+}
+
+let fbHadError = false;
+async function loadKey(key){
+  try{
+    const res = await fetch(fbUrl(key));
+    if(res.status===404) return [];
+    if(!res.ok){ console.error('Firestore GET falló', key, res.status, await res.text()); fbHadError = true; return []; }
+    const data = await res.json();
+    const str = data.fields && data.fields.value && data.fields.value.stringValue;
+    return str ? JSON.parse(str) : [];
+  }catch(e){ console.error('loadKey error', key, e); fbHadError = true; return []; }
+}
+async function saveKey(key, arr){
+  try{
+    const body = { fields: { value: { stringValue: JSON.stringify(arr) }, updatedAt: { timestampValue: new Date().toISOString() } } };
+    const res = await fetch(fbUrl(key), {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    if(!res.ok){ console.error('Firestore PATCH falló', key, res.status, await res.text()); fbHadError = true; }
+  }catch(e){ console.error('saveKey error', key, e); fbHadError = true; }
+}
+
+async function init(){
+  const [jobs, appointments, team, budgets, clients, tasks] = await Promise.all([loadKey('jobs'), loadKey('appointments'), loadKey('team'), loadKey('budgets'), loadKey('clients'), loadKey('tasks')]);
+  state.jobs = jobs; state.appointments = appointments; state.team = team; state.budgets = budgets; state.clients = clients; state.tasks = tasks;
+  state.loading = false;
+  render();
+}
+
+function fmtDate(d){
+  if(!d) return '—';
+  const [y,m,day] = d.split('-');
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${day} ${months[parseInt(m,10)-1]}`;
+}
+function todayStr(){
+  const t = new Date(); return t.toISOString().slice(0,10);
+}
+function daysUntil(d){
+  const today = new Date(todayStr()+'T00:00:00');
+  const target = new Date(d+'T00:00:00');
+  return Math.round((target-today)/86400000);
+}
+function apptBadge(d){
+  const diff = daysUntil(d);
+  if(diff < 0) return {label:'Pasada', bg:'#E9E4D8', fg:'#8A8272'};
+  if(diff === 0) return {label:'Hoy', bg:'#F1DFD5', fg:'#A64B2A'};
+  if(diff === 1) return {label:'Mañana', bg:'#F3E7D0', fg:'#8A5D18'};
+  return {label:`En ${diff} días`, bg:'#DCE7EA', fg:'#2F5D73'};
+}
+
+function fmtMoney(n){
+  return '$' + (Number(n)||0).toLocaleString('es-MX',{minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function waLink(phone, message){
+  const clean = (phone||'').replace(/[^\d+]/g,'');
+  const text = encodeURIComponent(message);
+  if(clean) return `https://wa.me/${clean.replace(/^\+/,'')}?text=${text}`;
+  return `https://api.whatsapp.com/send?text=${text}`;
+}
+function apptWaMessage(a){
+  const job = state.jobs.find(j=>j.id===a.jobId);
+  let msg = `Hola${a.client?` ${a.client}`:''}, te escribo de GABA Home para confirmar tu cita:\n\n`;
+  msg += `📌 ${a.title}\n📅 ${fmtDate(a.date)}${a.time?` · ${a.time} hrs`:''}\n`;
+  if(a.location) msg += `📍 ${a.location}\n`;
+  if(job) msg += `🗂️ Trabajo: ${job.title}\n`;
+  msg += `\nCualquier cambio avísanos. ¡Gracias!`;
+  return msg;
+}
+function budgetTotal(b){
+  const sub = (b.items||[]).reduce((s,it)=>s+(Number(it.amount)||0),0);
+  const iva = b.iva ? sub*0.16 : 0;
+  const total = sub+iva;
+  const paid = (b.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0);
+  return {sub, iva, total, paid, balance: total-paid};
+}
+function budgetWaMessage(b){
+  const t = budgetTotal(b);
+  let msg = `Hola${b.client?` ${b.client}`:''}, te comparto el presupuesto de GABA Home para *${b.title}*:\n\n`;
+  (b.items||[]).forEach(it=>{ msg += `• ${it.concept}: ${fmtMoney(it.amount)}\n`; });
+  msg += `\nSubtotal: ${fmtMoney(t.sub)}\n`;
+  if(b.iva) msg += `IVA (16%): ${fmtMoney(t.iva)}\n`;
+  msg += `*Total: ${fmtMoney(t.total)}*\n\nQuedamos atentos a tus comentarios.`;
+  return msg;
+}
+function fmtDateTime(ts){
+  const d = new Date(ts);
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const h = d.getHours().toString().padStart(2,'0'); const mi = d.getMinutes().toString().padStart(2,'0');
+  return `${d.getDate()} ${months[d.getMonth()]} · ${h}:${mi}`;
+}
+async function addJobLog(jobId, text){
+  const job = state.jobs.find(j=>j.id===jobId);
+  if(!job) return;
+  job.log = job.log || [];
+  job.log.push({id:uid(), ts:Date.now(), text});
+  await saveKey('jobs', state.jobs);
+}
+function findClientByName(name){
+  if(!name) return null;
+  const n = name.trim().toLowerCase();
+  return state.clients.find(c=>(c.name||'').trim().toLowerCase()===n) || null;
+}
+function printBudget(b){
+  const t = budgetTotal(b);
+  const job = state.jobs.find(j=>j.id===b.jobId);
+  const area = document.getElementById('gh-print-area');
+  area.innerHTML = `
+    <div class="gh-print-head">
       <div>
-        <h1>Control de expedientes y agenda técnica</h1>
-        <p>Ingeniería civil y arquitectura · expediente, seguimiento, agenda y cobranza</p>
+        <div class="gh-print-title">GABA HOME</div>
+        <div style="font-size:11px;color:#5B6660;letter-spacing:.5px;text-transform:uppercase;">Arquitectura · Ingeniería · Topografía</div>
       </div>
-      <div class="topbar-actions">
-        <span id="cloudStatus" class="badge status">Nube: conectando...</span>
-        <button id="enableNotificationsBtn">Activar notificaciones</button>
+      <div style="text-align:right;font-size:12px;">
+        <div>Presupuesto</div>
+        <div style="color:#5B6660;">${fmtDate(todayStr())}</div>
       </div>
-    </header>
-
-    <main>
-      <section class="stats">
-        <article class="stat-card">
-          <span>Expedientes totales</span>
-          <strong id="totalExpedientes">0</strong>
-        </article>
-        <article class="stat-card">
-          <span>Expedientes activos</span>
-          <strong id="expedientesActivos">0</strong>
-        </article>
-        <article class="stat-card">
-          <span>Citas próximas</span>
-          <strong id="citasProximas">0</strong>
-        </article>
-        <article class="stat-card">
-          <span>Cobranza pendiente</span>
-          <strong id="cobranzaPendiente">MXN 0</strong>
-        </article>
-      </section>
-
-      <div class="dashboard">
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <h2>Captura y operación</h2>
-              <p>Sección separada para crear expedientes y crear citas de inspección, visitas y seguimiento.</p>
-            </div>
-          </div>
-          <div class="panel-body">
-            <div class="tabs">
-              <button class="tab-btn active" data-form-tab="expediente">Crear expediente</button>
-              <button class="tab-btn" data-form-tab="cita">Crear cita</button>
-            </div>
-
-            <section id="expedienteFormSection">
-              <div class="notice-box success">
-                <strong>Expediente independiente</strong>
-                <p>Aquí registras el servicio, datos del predio, avance, cobro y bloqueos del trabajo.</p>
-              </div>
-              <div class="section-grid" style="margin-top:16px;">
-                <div class="field">
-                  <label for="expNumero">Número de expediente</label>
-                  <input id="expNumero" placeholder="Ej. AV-2026-014" />
-                </div>
-                <div class="field">
-                  <label for="expServicio">Tipo de servicio</label>
-                  <select id="expServicio">
-                    <option value="Avalúo">Avalúo</option>
-                    <option value="Trámite">Trámite</option>
-                    <option value="Obra">Obra</option>
-                    <option value="Levantamiento">Levantamiento</option>
-                    <option value="Proyecto arquitectónico">Proyecto arquitectónico</option>
-                    <option value="Regularización">Regularización</option>
-                    <option value="Dictamen">Dictamen</option>
-                    <option value="Topografía">Topografía</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="expNombre">Nombre del expediente</label>
-                  <input id="expNombre" placeholder="Ej. Avalúo casa habitación" />
-                </div>
-                <div class="field">
-                  <label for="expCliente">Cliente / razón social</label>
-                  <input id="expCliente" placeholder="Nombre del cliente" />
-                </div>
-                <div class="field">
-                  <label for="expContacto">Teléfono / contacto</label>
-                  <input id="expContacto" placeholder="Teléfono o WhatsApp" />
-                </div>
-                <div class="field">
-                  <label for="expCorreo">Correo electrónico</label>
-                  <input id="expCorreo" type="email" placeholder="correo@ejemplo.com" />
-                </div>
-                <div class="field-full">
-                  <label for="expDireccion">Dirección del predio / obra</label>
-                  <input id="expDireccion" placeholder="Calle, número, colonia, municipio" />
-                </div>
-                <div class="field">
-                  <label for="expMunicipio">Municipio / ciudad</label>
-                  <input id="expMunicipio" placeholder="Municipio o ciudad" />
-                </div>
-                <div class="field">
-                  <label for="expEstado">Estado / entidad</label>
-                  <input id="expEstado" placeholder="Estado" />
-                </div>
-                <div class="field">
-                  <label for="expStatus">Estado del expediente</label>
-                  <select id="expStatus">
-                    <option value="Prospección">Prospección</option>
-                    <option value="Activo" selected>Activo</option>
-                    <option value="En espera">En espera</option>
-                    <option value="Entregado">Entregado</option>
-                    <option value="Cerrado">Cerrado</option>
-                    <option value="Cancelado">Cancelado</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="expPrioridad">Prioridad</label>
-                  <select id="expPrioridad">
-                    <option value="Baja">Baja</option>
-                    <option value="Media" selected>Media</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Urgente">Urgente</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="expEtapa">Etapa actual</label>
-                  <input id="expEtapa" placeholder="Ej. Visita, análisis, ejecución" />
-                </div>
-                <div class="field">
-                  <label for="expAvance">Avance %</label>
-                  <input id="expAvance" type="number" min="0" max="100" value="0" />
-                </div>
-                <div class="field">
-                  <label for="expFechaInicio">Fecha de inicio</label>
-                  <input id="expFechaInicio" type="date" />
-                </div>
-                <div class="field">
-                  <label for="expFechaEntrega">Fecha de entrega</label>
-                  <input id="expFechaEntrega" type="date" />
-                </div>
-                <div class="field">
-                  <label for="expCotizacion">Cotización total</label>
-                  <input id="expCotizacion" type="number" min="0" step="0.01" placeholder="0.00" />
-                </div>
-                <div class="field">
-                  <label for="expAnticipo">Anticipo recibido</label>
-                  <input id="expAnticipo" type="number" min="0" step="0.01" placeholder="0.00" />
-                </div>
-                <div class="field">
-                  <label for="expPagoStatus">Estado de pago</label>
-                  <select id="expPagoStatus">
-                    <option value="No facturado">No facturado</option>
-                    <option value="Pendiente" selected>Pendiente</option>
-                    <option value="Parcial">Parcial</option>
-                    <option value="Pagado">Pagado</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="expEsperaDe">En espera de</label>
-                  <select id="expEsperaDe">
-                    <option value="Nadie">Nadie</option>
-                    <option value="Cliente">Cliente</option>
-                    <option value="Municipio">Municipio</option>
-                    <option value="Catastro">Catastro</option>
-                    <option value="Notaría">Notaría</option>
-                    <option value="Proveedor">Proveedor</option>
-                    <option value="Interno">Interno</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
-                <div class="field-full">
-                  <label for="expPendiente">Qué falta / bloqueo actual</label>
-                  <textarea id="expPendiente" placeholder="Describe el pendiente principal"></textarea>
-                </div>
-                <div class="field-full">
-                  <label for="expDocumentos">Documentos / liga de carpeta</label>
-                  <textarea id="expDocumentos" placeholder="Escrituras, INE, predial, Drive, etc."></textarea>
-                </div>
-                <div class="field-full">
-                  <label for="expNotas">Notas internas</label>
-                  <textarea id="expNotas" placeholder="Observaciones técnicas y administrativas"></textarea>
-                </div>
-              </div>
-              <div class="actions-row">
-                <button id="saveExpedienteBtn">Guardar expediente</button>
-                <button class="ghost-btn" id="clearExpedienteBtn" type="button">Limpiar</button>
-                <button class="ghost-btn hidden" id="deleteExpedienteBtn" type="button">Eliminar expediente</button>
-              </div>
-            </section>
-
-            <section id="citaFormSection" class="hidden">
-              <div class="notice-box warning">
-                <strong>Citas separadas del expediente</strong>
-                <p>Registra inspecciones, levantamientos, visitas o reuniones y activa recordatorios locales.</p>
-              </div>
-              <div class="section-grid" style="margin-top:16px;">
-                <div class="field">
-                  <label for="citaTitulo">Título de la cita</label>
-                  <input id="citaTitulo" placeholder="Ej. Inspección estructural" />
-                </div>
-                <div class="field">
-                  <label for="citaTipo">Tipo de cita</label>
-                  <select id="citaTipo">
-                    <option value="Inspección">Inspección</option>
-                    <option value="Visita de obra">Visita de obra</option>
-                    <option value="Levantamiento">Levantamiento</option>
-                    <option value="Reunión con cliente">Reunión con cliente</option>
-                    <option value="Entrega">Entrega</option>
-                    <option value="Trámite">Trámite</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="citaExpediente">Expediente relacionado</label>
-                  <select id="citaExpediente">
-                    <option value="">Sin vincular</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="citaResponsable">Responsable</label>
-                  <input id="citaResponsable" placeholder="Quién asiste" />
-                </div>
-                <div class="field">
-                  <label for="citaFecha">Fecha</label>
-                  <input id="citaFecha" type="date" />
-                </div>
-                <div class="field">
-                  <label for="citaHora">Hora</label>
-                  <input id="citaHora" type="time" />
-                </div>
-                <div class="field-full">
-                  <label for="citaLugar">Lugar</label>
-                  <input id="citaLugar" placeholder="Dirección o punto de reunión" />
-                </div>
-                <div class="field">
-                  <label for="citaReminder">Recordatorio</label>
-                  <select id="citaReminder">
-                    <option value="15">15 minutos antes</option>
-                    <option value="30">30 minutos antes</option>
-                    <option value="60" selected>1 hora antes</option>
-                    <option value="180">3 horas antes</option>
-                    <option value="1440">1 día antes</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="citaStatus">Estado de la cita</label>
-                  <select id="citaStatus">
-                    <option value="Programada" selected>Programada</option>
-                    <option value="Confirmada">Confirmada</option>
-                    <option value="Realizada">Realizada</option>
-                    <option value="Reagendada">Reagendada</option>
-                    <option value="Cancelada">Cancelada</option>
-                  </select>
-                </div>
-                <div class="field-full">
-                  <label for="citaNotas">Notas</label>
-                  <textarea id="citaNotas" placeholder="Qué se revisará, qué llevar, acuerdos, etc."></textarea>
-                </div>
-              </div>
-              <div class="actions-row">
-                <button id="saveCitaBtn">Guardar cita</button>
-                <button class="ghost-btn" id="clearCitaBtn" type="button">Limpiar</button>
-                <button class="ghost-btn hidden" id="deleteCitaBtn" type="button">Eliminar cita</button>
-              </div>
-            </section>
-
-            <div class="footer-note">
-              <strong>Dónde se guardan los datos:</strong> esta versión ya está preparada para guardar expedientes y citas en <strong>Firebase Firestore</strong>, por lo que podrás ver la misma información desde otro teléfono, tableta o computadora usando la misma app. Además, se conserva un <strong>respaldo local</strong> en el navegador por si la red falla temporalmente.
-              <br /><br />
-              <strong>Cómo se mandan las notificaciones:</strong> el botón <strong>Activar notificaciones</strong> solicita permiso al navegador para mostrar avisos locales antes de una cita programada. En esta versión, los recordatorios aparecen como notificaciones del navegador mientras la app esté abierta y el permiso siga activo.
-              <br /><br />
-              <strong>Trabajos pendientes y citas:</strong> los expedientes pendientes se reflejan en los estados, avances, bloqueos y métricas superiores. Las citas próximas se calculan por fecha y hora, y sus recordatorios se disparan según el tiempo que configures en cada cita.
-              <br /><br />
-              <strong>Importante:</strong> para recibir avisos aunque la app esté cerrada, o para mandar recordatorios por <strong>correo, WhatsApp o push real entre dispositivos</strong>, todavía haría falta agregar <strong>Firebase Cloud Messaging</strong> o un servicio externo de mensajería.
-            </div>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <h2>Consulta y seguimiento</h2>
-              <p>Sección separada para ver expedientes y ver citas con filtros rápidos.</p>
-            </div>
-          </div>
-          <div class="panel-body">
-            <div class="tabs">
-              <button class="tab-btn active" data-view-tab="expedientes">Ver expedientes</button>
-              <button class="tab-btn" data-view-tab="citas">Ver citas</button>
-            </div>
-
-            <section id="expedientesViewSection">
-              <div class="toolbar">
-                <div class="field">
-                  <label for="searchExpedientes">Buscar expediente</label>
-                  <input id="searchExpedientes" placeholder="Número, cliente, servicio o dirección" />
-                </div>
-                <div class="field">
-                  <label for="filterServicio">Servicio</label>
-                  <select id="filterServicio">
-                    <option value="">Todos</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="filterEstadoExp">Estado</label>
-                  <select id="filterEstadoExp">
-                    <option value="">Todos</option>
-                    <option value="Prospección">Prospección</option>
-                    <option value="Activo">Activo</option>
-                    <option value="En espera">En espera</option>
-                    <option value="Entregado">Entregado</option>
-                    <option value="Cerrado">Cerrado</option>
-                    <option value="Cancelado">Cancelado</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="filterPrioridadExp">Prioridad</label>
-                  <select id="filterPrioridadExp">
-                    <option value="">Todas</option>
-                    <option value="Baja">Baja</option>
-                    <option value="Media">Media</option>
-                    <option value="Alta">Alta</option>
-                    <option value="Urgente">Urgente</option>
-                  </select>
-                </div>
-              </div>
-              <div id="expedientesList" class="list-wrap"></div>
-            </section>
-
-            <section id="citasViewSection" class="hidden">
-              <div class="toolbar">
-                <div class="field">
-                  <label for="searchCitas">Buscar cita</label>
-                  <input id="searchCitas" placeholder="Título, responsable, lugar o expediente" />
-                </div>
-                <div class="field">
-                  <label for="filterTipoCita">Tipo</label>
-                  <select id="filterTipoCita">
-                    <option value="">Todos</option>
-                    <option value="Inspección">Inspección</option>
-                    <option value="Visita de obra">Visita de obra</option>
-                    <option value="Levantamiento">Levantamiento</option>
-                    <option value="Reunión con cliente">Reunión con cliente</option>
-                    <option value="Entrega">Entrega</option>
-                    <option value="Trámite">Trámite</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="filterEstadoCita">Estado</label>
-                  <select id="filterEstadoCita">
-                    <option value="">Todos</option>
-                    <option value="Programada">Programada</option>
-                    <option value="Confirmada">Confirmada</option>
-                    <option value="Realizada">Realizada</option>
-                    <option value="Reagendada">Reagendada</option>
-                    <option value="Cancelada">Cancelada</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="filterProximidadCita">Ventana</label>
-                  <select id="filterProximidadCita">
-                    <option value="">Todas</option>
-                    <option value="hoy">Solo hoy</option>
-                    <option value="7">Próximos 7 días</option>
-                    <option value="30">Próximos 30 días</option>
-                  </select>
-                </div>
-              </div>
-              <div id="citasList" class="list-wrap"></div>
-            </section>
-          </div>
-        </section>
+    </div>
+    <div style="margin-bottom:10px;"><strong>${escapeHtml(b.title)}</strong></div>
+    <div style="font-size:13px;color:#5B6660;margin-bottom:4px;">Cliente: ${escapeHtml(b.client||'—')}</div>
+    ${job?`<div style="font-size:13px;color:#5B6660;">Trabajo relacionado: ${escapeHtml(job.title)}</div>`:''}
+    <table class="gh-print-table">
+      <thead><tr><th>Concepto</th><th style="text-align:right;">Monto</th></tr></thead>
+      <tbody>
+        ${(b.items||[]).map(it=>`<tr><td>${escapeHtml(it.concept)}</td><td style="text-align:right;">${fmtMoney(it.amount)}</td></tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="gh-print-total">
+      <div>
+        <div>Subtotal: ${fmtMoney(t.sub)}</div>
+        ${b.iva?`<div>IVA (16%): ${fmtMoney(t.iva)}</div>`:''}
+        <div style="font-weight:700;font-size:16px;margin-top:4px;">Total: ${fmtMoney(t.total)}</div>
       </div>
-    </main>
+    </div>
+  `;
+  window.print();
+}
+
+function isOverdue(j){
+  return j.dueDate && j.status!=='terminado' && daysUntil(j.dueDate) < 0;
+}
+function nextFolio(){
+  const year = new Date().getFullYear();
+  const countThisYear = state.jobs.filter(j=>j.folio && j.folio.includes(`-${year}-`)).length;
+  return `GABA-${year}-${(countThisYear+1).toString().padStart(3,'0')}`;
+}
+function mapsLink(loc){
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`;
+}
+function globalSearchResults(q){
+  const query = (q||'').trim().toLowerCase();
+  if(!query) return [];
+  const results = [];
+  state.jobs.forEach(j=>{
+    if((j.title||'').toLowerCase().includes(query) || (j.client||'').toLowerCase().includes(query) || (j.folio||'').toLowerCase().includes(query)){
+      results.push({kind:'Trabajo', label:j.title, sub:j.client||'Sin cliente', action:`ghOpenJobDetail('${j.id}')`});
+    }
+  });
+  state.appointments.forEach(a=>{
+    if((a.title||'').toLowerCase().includes(query) || (a.client||'').toLowerCase().includes(query)){
+      results.push({kind:'Cita', label:a.title, sub:`${fmtDate(a.date)}${a.time?` · ${a.time}`:''}`, action:`ghSetView('appts')`});
+    }
+  });
+  state.clients.forEach(c=>{
+    if((c.name||'').toLowerCase().includes(query)){
+      results.push({kind:'Cliente', label:c.name, sub:c.phone||'', action:`ghOpenClientDetail('${c.id}')`});
+    }
+  });
+  state.budgets.forEach(b=>{
+    if((b.title||'').toLowerCase().includes(query) || (b.client||'').toLowerCase().includes(query)){
+      results.push({kind:'Presupuesto', label:b.title, sub:b.client||'', action:`ghSetView('budgets')`});
+    }
+  });
+  return results.slice(0,20);
+}
+
+function escapeICS(s){ return (s||'').toString().replace(/\\/g,'\\\\').replace(/,/g,'\\,').replace(/;/g,'\\;').replace(/\n/g,'\\n'); }
+function padICS(n){ return n.toString().padStart(2,'0'); }
+function vEventBlock(a){
+  const uidStr = `${a.id}@gabahome`;
+  let dtstartLine, dtendLine;
+  if(a.time){
+    const [y,m,d] = a.date.split('-');
+    const [hh,mm] = a.time.split(':');
+    dtstartLine = `DTSTART:${y}${m}${d}T${hh}${mm}00`;
+    let endH = parseInt(hh,10)+1; if(endH>23) endH=23;
+    dtendLine = `DTEND:${y}${m}${d}T${padICS(endH)}${mm}00`;
+  }else{
+    const [y,m,d] = a.date.split('-');
+    dtstartLine = `DTSTART;VALUE=DATE:${y}${m}${d}`;
+    dtendLine = `DTEND;VALUE=DATE:${y}${m}${d}`;
+  }
+  const triggerMap = {sameday:'-PT2H', '1day':'-P1D', '2day':'-P2D'};
+  let alarm = '';
+  if(a.reminder && triggerMap[a.reminder]){
+    alarm = `BEGIN:VALARM\r\nTRIGGER:${triggerMap[a.reminder]}\r\nACTION:DISPLAY\r\nDESCRIPTION:Recordatorio: ${escapeICS(a.title)}\r\nEND:VALARM\r\n`;
+  }
+  const desc = [a.client?`Cliente: ${a.client}`:'', a.notes||''].filter(Boolean).join('\\n');
+  return [
+    'BEGIN:VEVENT',
+    `UID:${uidStr}`,
+    dtstartLine, dtendLine,
+    `SUMMARY:${escapeICS(a.title)}`,
+    a.location?`LOCATION:${escapeICS(a.location)}`:'',
+    desc?`DESCRIPTION:${escapeICS(desc)}`:'',
+    alarm.trim(),
+    'END:VEVENT'
+  ].filter(Boolean).join('\r\n');
+}
+function apptToICS(a){
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GABA HOME//Citas//ES','CALSCALE:GREGORIAN', vEventBlock(a), 'END:VCALENDAR'].join('\r\n');
+}
+function allApptsICS(list){
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GABA HOME//Citas//ES','CALSCALE:GREGORIAN', ...list.map(vEventBlock), 'END:VCALENDAR'].join('\r\n');
+}
+function downloadICS(filename, content){
+  const blob = new Blob([content], {type:'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = filename;
+  document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- RENDER ---------------- */
+function render(){
+  const root = document.getElementById('gaba-root');
+  if(state.loading){
+    root.innerHTML = `<div style="padding:60px;text-align:center;width:100%;font-family:Inter,sans-serif;color:var(--ink-soft)">Cargando panel de GABA Home…</div>`;
+    return;
+  }
+  root.innerHTML = `
+    ${sidebar()}
+    <div class="gh-main">
+      ${fbHadError ? `<div style="background:#F1DFD5;color:#A64B2A;border:1.4px solid #E0BBA6;border-radius:8px;padding:10px 14px;font-size:12.5px;margin-bottom:16px;">⚠ No se pudo conectar con Firebase. Revisa las reglas de seguridad de Firestore o la consola del navegador (F12). Mientras tanto, tus cambios podrían no estar guardándose.</div>` : ''}
+      ${searchBar()}
+      ${state.searchQuery.trim() ? searchResultsView() : `
+      ${state.view==='dashboard' ? viewDashboard() : ''}
+      ${state.view==='jobs' ? viewJobs() : ''}
+      ${state.view==='jobDetail' ? viewJobDetail() : ''}
+      ${state.view==='appts' ? viewAppts() : ''}
+      ${state.view==='budgets' ? viewBudgets() : ''}
+      ${state.view==='clients' ? viewClients() : ''}
+      ${state.view==='clientDetail' ? viewClientDetail() : ''}
+      ${state.view==='tasks' ? viewTasks() : ''}
+      ${state.view==='reports' ? viewReports() : ''}
+      ${state.view==='team' ? viewTeam() : ''}
+      `}
+    </div>
+    ${state.modal ? modal() : ''}
+  `;
+}
+
+function searchBar(){
+  return `
+  <div class="gh-search-wrap">
+    <span class="gh-search-icon">${iconSearch()}</span>
+    <input class="gh-search-input" id="gh-search-box" placeholder="Buscar trabajo, cliente, cita o presupuesto..." value="${escAttr(state.searchQuery)}" oninput="ghSearch(this.value)">
+  </div>`;
+}
+
+function searchResultsView(){
+  const results = globalSearchResults(state.searchQuery);
+  return `
+  <div class="gh-topbar"><div><h1 class="gh-title">Resultados de búsqueda</h1><div class="gh-subtitle">${results.length} encontrados</div></div></div>
+  ${results.length===0 ? emptyState('No se encontró nada con ese texto.') :
+    results.map(r=>`<div class="gh-search-result" onclick="ghClearSearchAnd(()=>{${r.action}})"><div><div style="font-weight:600;font-size:13.5px;">${escapeHtml(r.label)}</div><div style="font-size:11.5px;color:var(--ink-soft);">${escapeHtml(r.sub)}</div></div><span class="gh-search-kind">${r.kind}</span></div>`).join('')}
+  `;
+}
+
+function sidebar(){
+  const items = [
+    {id:'dashboard', label:'Panel general', icon:iconGrid()},
+    {id:'jobs', label:'Trabajos', icon:iconLayers()},
+    {id:'appts', label:'Citas', icon:iconCalendar()},
+    {id:'budgets', label:'Presupuestos', icon:iconMoney()},
+    {id:'clients', label:'Clientes', icon:iconUsers()},
+    {id:'tasks', label:'Tareas', icon:iconCheck()},
+    {id:'reports', label:'Reportes', icon:iconChart()},
+    {id:'team', label:'Equipo', icon:iconUsers()}
+  ];
+  return `
+  <div class="gh-sidebar">
+    <div class="gh-logo">
+      ${iconMark()}
+      <div class="gh-logo-text">GABA HOME<span>ARQ · ING · TOPO</span></div>
+    </div>
+    <div class="gh-nav">
+      ${items.map(it=>`
+        <button class="gh-nav-item ${state.view===it.id?'active':''}" onclick="ghSetView('${it.id}')">
+          ${it.icon}<span>${it.label}</span>
+        </button>`).join('')}
+    </div>
+    <div class="gh-sidebar-foot">${new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'})}</div>
+  </div>`;
+}
+
+function viewDashboard(){
+  const activeJobs = state.jobs.filter(j=>j.status!=='terminado');
+  const upcoming = state.appointments.filter(a=>daysUntil(a.date)>=0).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  const nextWeek = upcoming.filter(a=>daysUntil(a.date)<=7);
+  const tramitesPend = state.jobs.filter(j=>j.type==='tramite' && j.status!=='terminado');
+  const avgProgress = state.jobs.length ? Math.round(state.jobs.reduce((s,j)=>s+Number(j.progress||0),0)/state.jobs.length) : 0;
+  const inProgress = state.jobs.filter(j=>j.status==='en_proceso').sort((a,b)=>Number(b.progress)-Number(a.progress));
+  const pendingTasks = state.tasks.filter(t=>!t.done).sort((a,b)=>(a.dueDate||'9999').localeCompare(b.dueDate||'9999'));
+  const overdueJobs = state.jobs.filter(j=>isOverdue(j));
+
+  return `
+  <div class="gh-topbar">
+    <div>
+      <h1 class="gh-title">Panel general</h1>
+      <div class="gh-subtitle">Vista completa de GABA Home</div>
+    </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  <div class="gh-stats">
+    <div class="gh-stat"><div class="gh-stat-pin">01</div><div class="gh-stat-num">${activeJobs.length}</div><div class="gh-stat-label">Trabajos activos</div></div>
+    <div class="gh-stat"><div class="gh-stat-pin">02</div><div class="gh-stat-num">${nextWeek.length}</div><div class="gh-stat-label">Citas en 7 días</div></div>
+    <div class="gh-stat"><div class="gh-stat-pin">03</div><div class="gh-stat-num">${tramitesPend.length}</div><div class="gh-stat-label">Trámites pendientes</div></div>
+    <div class="gh-stat"><div class="gh-stat-pin">04</div><div class="gh-stat-num">${avgProgress}%</div><div class="gh-stat-label">Avance promedio</div></div>
+  </div>
 
-    const STORAGE_KEY = "merlin_expedientes_citas_v1";
-    const firebaseConfig = {
-      apiKey: "AIzaSyC5E3AgtVwGh684u-o1T-Tz7ef1G9PmonE",
-      authDomain: "gaba-home-e5d12.firebaseapp.com",
-      projectId: "gaba-home-e5d12",
-      storageBucket: "gaba-home-e5d12.firebasestorage.app",
-      messagingSenderId: "513779572525",
-      appId: "1:513779572525:web:b30bdbaded4f75f42afda4",
-      measurementId: "G-CVY9CH6NDS"
-    };
+  ${overdueJobs.length?`
+  <div class="gh-section">
+    <div class="gh-section-head"><div class="gh-section-title">⚠ Trabajos atrasados</div></div>
+    ${overdueJobs.map(j=>jobCard(j)).join('')}
+  </div>`:''}
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const expedientesRef = collection(db, "expedientes");
-    const citasRef = collection(db, "citas");
+  <div class="gh-section">
+    <div class="gh-section-head">
+      <div class="gh-section-title">Próximas citas</div>
+      <button class="gh-btn ghost" onclick="ghSetView('appts')">Ver todas →</button>
+    </div>
+    ${upcoming.length===0 ? emptyState('No tienes citas próximas todavía.') :
+      upcoming.slice(0,5).map(a=>apptRow(a)).join('')}
+  </div>
 
-    const state = {
-      expedientes: [],
-      citas: [],
-      editingExpedienteId: null,
-      editingCitaId: null,
-      reminderTimers: []
-    };
+  <div class="gh-section">
+    <div class="gh-section-head">
+      <div class="gh-section-title">Trabajos en progreso</div>
+      <button class="gh-btn ghost" onclick="ghSetView('jobs')">Ver todos →</button>
+    </div>
+    ${inProgress.length===0 ? emptyState('No hay trabajos en proceso.') :
+      inProgress.slice(0,5).map(j=>jobCard(j)).join('')}
+  </div>
 
-    const $ = (id) => document.getElementById(id);
-    const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const money = (value) => `MXN ${Number(value || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  <div class="gh-section">
+    <div class="gh-section-head">
+      <div class="gh-section-title">Tareas pendientes</div>
+      <button class="gh-btn ghost" onclick="ghSetView('tasks')">Ver todas →</button>
+    </div>
+    ${pendingTasks.length===0 ? emptyState('No tienes tareas pendientes.') :
+      pendingTasks.slice(0,5).map(t=>taskRow(t)).join('')}
+  </div>
+  `;
+}
 
-    function setCloudStatus(text) {
-      const el = $('cloudStatus');
-      if (el) el.textContent = text;
-    }
+function emptyState(msg){
+  return `<div class="gh-empty">${msg}</div>`;
+}
 
-    async function loadData() {
-      setCloudStatus('Nube: cargando...');
-      try {
-        const [expSnap, citasSnap] = await Promise.all([getDocs(expedientesRef), getDocs(citasRef)]);
-        state.expedientes = expSnap.docs.map((item) => ({ id: item.id, ...item.data() }));
-        state.citas = citasSnap.docs.map((item) => ({ id: item.id, ...item.data() }));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ expedientes: state.expedientes, citas: state.citas }));
-        setCloudStatus('Nube: conectada');
-      } catch (error) {
-        console.error('No se pudo cargar Firebase, usando copia local', error);
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            state.expedientes = Array.isArray(parsed.expedientes) ? parsed.expedientes : [];
-            state.citas = Array.isArray(parsed.citas) ? parsed.citas : [];
-          }
-        } catch (localError) {
-          console.error('No se pudo cargar la copia local', localError);
-        }
-        setCloudStatus('Nube: sin conexión');
-      }
-    }
+function apptRow(a){
+  const badge = apptBadge(a.date);
+  const job = state.jobs.find(j=>j.id===a.jobId);
+  return `
+  <div class="gh-appt">
+    <div class="gh-appt-date">${fmtDate(a.date)}<div style="font-size:10px;color:var(--ink-soft);font-weight:500;margin-top:2px">${a.time||''}</div></div>
+    <div class="gh-appt-body">
+      <div class="gh-appt-title">${escapeHtml(a.title)}</div>
+      <div class="gh-appt-meta">${escapeHtml(a.client||'Sin cliente')}${job?` · ${escapeHtml(job.title)}`:''}${a.location?` · ${escapeHtml(a.location)}`:''}</div>
+    </div>
+    <span class="gh-appt-badge" style="background:${badge.bg};color:${badge.fg}">${badge.label}</span>
+    <div class="gh-job-actions">
+      <button class="gh-btn ghost small" onclick="ghDownloadApptICS('${a.id}')" title="Agregar a mi calendario">📅 Calendario</button>
+      <button class="gh-wa-btn" onclick="ghSendApptWhatsapp('${a.id}')">${iconWhatsapp()} WhatsApp</button>
+      <button class="gh-btn ghost small" onclick="ghEditAppt('${a.id}')">${iconEdit()}</button>
+      <button class="gh-btn ghost small" onclick="ghDeleteAppt('${a.id}')">${iconTrash()}</button>
+    </div>
+  </div>`;
+}
 
-    function saveLocalBackup() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        expedientes: state.expedientes,
-        citas: state.citas
-      }));
-    }
+function jobCard(j){
+  const tc = TYPE_COLORS[j.type] || TYPE_COLORS.otro;
+  const member = state.team.find(m=>m.id===j.assignedTo);
+  const overdue = isOverdue(j);
+  return `
+  <div class="gh-job">
+    <div class="gh-job-top">
+      <div>
+        <div class="gh-job-title">${escapeHtml(j.title)}</div>
+        <div class="gh-job-meta">${j.folio?`<span class="gh-folio">${j.folio}</span> · `:''}${escapeHtml(j.client||'Sin cliente')}${member?` · ${escapeHtml(member.name)}`:''}${j.location?` · <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 ${escapeHtml(j.location)}</a>`:''}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+        ${overdue?`<span class="gh-atraso">Atrasado</span>`:''}
+        ${j.priority==='urgente'?`<span class="gh-priority-urgente">Urgente</span>`:''}
+        <span class="gh-tag" style="background:${tc.bg};color:${tc.fg}">${TYPES.find(t=>t.id===j.type)?.label||'Otro'}</span>
+        <span class="gh-stamp ${j.status}">${STATUS[j.status]}</span>
+      </div>
+    </div>
+    <div class="gh-progress-track"><div class="gh-progress-fill" style="width:${j.progress||0}%"></div></div>
+    <div class="gh-job-foot">
+      <span>Avance: ${j.progress||0}% ${j.dueDate?`· Entrega: ${fmtDate(j.dueDate)}`:''}</span>
+      <div class="gh-job-actions">
+        <button class="gh-btn ghost small" onclick="ghOpenJobDetail('${j.id}')">📁 Expediente</button>
+        <button class="gh-btn ghost small" onclick="ghEditJob('${j.id}')">${iconEdit()}</button>
+        <button class="gh-btn ghost small" onclick="ghDeleteJob('${j.id}')">${iconTrash()}</button>
+      </div>
+    </div>
+  </div>`;
+}
 
-    function formatDate(dateStr) {
-      if (!dateStr) return 'Sin fecha';
-      const date = new Date(`${dateStr}T00:00:00`);
-      if (Number.isNaN(date.getTime())) return dateStr;
-      return date.toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
-    }
+function viewJobs(){
+  let list = state.jobs.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(state.filterType!=='todos') list = list.filter(j=>j.type===state.filterType);
+  if(state.filterStatus!=='todos') list = list.filter(j=>j.status===state.filterStatus);
 
-    function formatDateTime(dateStr, timeStr) {
-      if (!dateStr) return 'Sin programar';
-      const date = new Date(`${dateStr}T${timeStr || '00:00'}:00`);
-      if (Number.isNaN(date.getTime())) return `${dateStr} ${timeStr || ''}`.trim();
-      return date.toLocaleString('es-MX', {
-        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-      });
-    }
+  return `
+  <div class="gh-topbar">
+    <div>
+      <h1 class="gh-title">Trabajos</h1>
+      <div class="gh-subtitle">${state.jobs.length} en total</div>
+    </div>
+    <button class="gh-btn" onclick="ghOpenNewJob()">${iconPlus()} Nuevo trabajo</button>
+  </div>
 
-    function expedienteLabel(exp) {
-      return `${exp.numero || 'SIN-NÚMERO'} · ${exp.nombre || 'Sin nombre'}`;
-    }
+  <div class="gh-filters">
+    <button class="gh-chip ${state.filterType==='todos'?'active':''}" onclick="ghFilter('type','todos')">Todos los tipos</button>
+    ${TYPES.map(t=>`<button class="gh-chip ${state.filterType===t.id?'active':''}" onclick="ghFilter('type','${t.id}')">${t.label}</button>`).join('')}
+  </div>
+  <div class="gh-filters">
+    <button class="gh-chip ${state.filterStatus==='todos'?'active':''}" onclick="ghFilter('status','todos')">Todos los estados</button>
+    ${Object.entries(STATUS).map(([k,v])=>`<button class="gh-chip ${state.filterStatus===k?'active':''}" onclick="ghFilter('status','${k}')">${v}</button>`).join('')}
+  </div>
 
-    function getExpedienteById(id) {
-      return state.expedientes.find((item) => item.id === id) || null;
-    }
+  ${list.length===0 ? emptyState('No hay trabajos con estos filtros. Crea uno nuevo para empezar.') : list.map(j=>jobCard(j)).join('')}
+  `;
+}
 
-    function getSaldoPendiente(exp) {
-      const cotizacion = Number(exp.cotizacion || 0);
-      const anticipo = Number(exp.anticipo || 0);
-      return Math.max(cotizacion - anticipo, 0);
-    }
+function viewJobDetail(){
+  const j = state.jobs.find(x=>x.id===state.selectedJobId);
+  if(!j){
+    return `<div class="gh-topbar"><h1 class="gh-title">Expediente no encontrado</h1></div>
+    <button class="gh-btn secondary" onclick="ghSetView('jobs')">← Volver a trabajos</button>`;
+  }
+  const tc = TYPE_COLORS[j.type] || TYPE_COLORS.otro;
+  const member = state.team.find(m=>m.id===j.assignedTo);
+  const overdue = isOverdue(j);
+  const relBudgets = state.budgets.filter(b=>b.jobId===j.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const relAppts = state.appointments.filter(a=>a.jobId===j.id).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  const grandTotal = relBudgets.reduce((s,b)=>s+budgetTotal(b).total,0);
 
-    function clearExpedienteForm() {
-      state.editingExpedienteId = null;
-      $('expNumero').value = '';
-      $('expServicio').value = 'Avalúo';
-      $('expNombre').value = '';
-      $('expCliente').value = '';
-      $('expContacto').value = '';
-      $('expCorreo').value = '';
-      $('expDireccion').value = '';
-      $('expMunicipio').value = '';
-      $('expEstado').value = '';
-      $('expStatus').value = 'Activo';
-      $('expPrioridad').value = 'Media';
-      $('expEtapa').value = '';
-      $('expAvance').value = 0;
-      $('expFechaInicio').value = '';
-      $('expFechaEntrega').value = '';
-      $('expCotizacion').value = '';
-      $('expAnticipo').value = '';
-      $('expPagoStatus').value = 'Pendiente';
-      $('expEsperaDe').value = 'Nadie';
-      $('expPendiente').value = '';
-      $('expDocumentos').value = '';
-      $('expNotas').value = '';
-      $('deleteExpedienteBtn').classList.add('hidden');
-      $('saveExpedienteBtn').textContent = 'Guardar expediente';
-    }
+  return `
+  <button class="gh-btn ghost small" style="margin-bottom:14px;" onclick="ghSetView('jobs')">← Volver a trabajos</button>
 
-    function clearCitaForm() {
-      state.editingCitaId = null;
-      $('citaTitulo').value = '';
-      $('citaTipo').value = 'Inspección';
-      $('citaExpediente').value = '';
-      $('citaResponsable').value = '';
-      $('citaFecha').value = '';
-      $('citaHora').value = '';
-      $('citaLugar').value = '';
-      $('citaReminder').value = '60';
-      $('citaStatus').value = 'Programada';
-      $('citaNotas').value = '';
-      $('deleteCitaBtn').classList.add('hidden');
-      $('saveCitaBtn').textContent = 'Guardar cita';
-    }
+  <div class="gh-topbar">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+        <span class="gh-tag" style="background:${tc.bg};color:${tc.fg}">${TYPES.find(t=>t.id===j.type)?.label||'Otro'}</span>
+        <span class="gh-stamp ${j.status}">${STATUS[j.status]}</span>
+        ${overdue?`<span class="gh-atraso">Atrasado</span>`:''}
+        ${j.priority==='urgente'?`<span class="gh-priority-urgente">Urgente</span>`:''}
+        ${j.folio?`<span class="gh-folio">${j.folio}</span>`:''}
+      </div>
+      <h1 class="gh-title">${escapeHtml(j.title)}</h1>
+      <div class="gh-subtitle">${escapeHtml(j.client||'Sin cliente')}${member?` · Responsable: ${escapeHtml(member.name)}`:''}${j.location?` · <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener">📍 ${escapeHtml(j.location)}</a>`:''}</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="gh-wa-btn" onclick="ghSendJobExpedienteWhatsapp('${j.id}')">${iconWhatsapp()} Resumen por WhatsApp</button>
+      <button class="gh-btn secondary" onclick="ghEditJob('${j.id}')">${iconEdit()} Editar</button>
+    </div>
+  </div>
 
-    function fillExpedienteForm(exp) {
-      state.editingExpedienteId = exp.id;
-      $('expNumero').value = exp.numero || '';
-      $('expServicio').value = exp.servicio || 'Avalúo';
-      $('expNombre').value = exp.nombre || '';
-      $('expCliente').value = exp.cliente || '';
-      $('expContacto').value = exp.contacto || '';
-      $('expCorreo').value = exp.correo || '';
-      $('expDireccion').value = exp.direccion || '';
-      $('expMunicipio').value = exp.municipio || '';
-      $('expEstado').value = exp.estado || '';
-      $('expStatus').value = exp.status || 'Activo';
-      $('expPrioridad').value = exp.prioridad || 'Media';
-      $('expEtapa').value = exp.etapa || '';
-      $('expAvance').value = Number(exp.avance || 0);
-      $('expFechaInicio').value = exp.fechaInicio || '';
-      $('expFechaEntrega').value = exp.fechaEntrega || '';
-      $('expCotizacion').value = exp.cotizacion || '';
-      $('expAnticipo').value = exp.anticipo || '';
-      $('expPagoStatus').value = exp.pagoStatus || 'Pendiente';
-      $('expEsperaDe').value = exp.esperaDe || 'Nadie';
-      $('expPendiente').value = exp.pendiente || '';
-      $('expDocumentos').value = exp.documentos || '';
-      $('expNotas').value = exp.notas || '';
-      $('deleteExpedienteBtn').classList.remove('hidden');
-      $('saveExpedienteBtn').textContent = 'Actualizar expediente';
-      setFormTab('expediente');
-    }
+  <div class="gh-section">
+    <div class="gh-section-title" style="margin-bottom:10px;">Avance</div>
+    <div class="gh-job" style="margin-bottom:0;">
+      <div class="gh-progress-track" style="height:9px;"><div class="gh-progress-fill" style="width:${j.progress||0}%"></div></div>
+      <div class="gh-job-foot">
+        <span>${j.progress||0}% completado</span>
+        <span>${j.startDate?`Inicio: ${fmtDate(j.startDate)}`:''} ${j.dueDate?`· Entrega: ${fmtDate(j.dueDate)}`:''}</span>
+      </div>
+      ${j.notes?`<div style="font-size:13px;color:var(--ink-soft);border-top:1px dashed var(--border);padding-top:9px;">${escapeHtml(j.notes)}</div>`:''}
+    </div>
+  </div>
 
-    function fillCitaForm(cita) {
-      state.editingCitaId = cita.id;
-      $('citaTitulo').value = cita.titulo || '';
-      $('citaTipo').value = cita.tipo || 'Inspección';
-      $('citaExpediente').value = cita.expedienteId || '';
-      $('citaResponsable').value = cita.responsable || '';
-      $('citaFecha').value = cita.fecha || '';
-      $('citaHora').value = cita.hora || '';
-      $('citaLugar').value = cita.lugar || '';
-      $('citaReminder').value = String(cita.reminder || 60);
-      $('citaStatus').value = cita.status || 'Programada';
-      $('citaNotas').value = cita.notas || '';
-      $('deleteCitaBtn').classList.remove('hidden');
-      $('saveCitaBtn').textContent = 'Actualizar cita';
-      setFormTab('cita');
-    }
+  <div class="gh-section">
+    <div class="gh-section-head">
+      <div class="gh-section-title">Pendientes de este trabajo</div>
+      <button class="gh-btn secondary small" onclick="ghOpenNewTask('${j.id}')">${iconPlus()} Agregar</button>
+    </div>
+    ${(()=>{ const relTasks = state.tasks.filter(t=>t.jobId===j.id); return relTasks.length===0 ? emptyState('Sin pendientes específicos para este trabajo.') : relTasks.map(t=>taskRow(t)).join(''); })()}
+  </div>
 
-    function readExpedienteForm() {
-      const nombre = $('expNombre').value.trim();
-      const cliente = $('expCliente').value.trim();
-      if (!nombre || !cliente) {
-        alert('Captura al menos el nombre del expediente y el cliente.');
-        return null;
-      }
-      return {
-        id: state.editingExpedienteId || uid(),
-        numero: $('expNumero').value.trim(),
-        servicio: $('expServicio').value,
-        nombre,
-        cliente,
-        contacto: $('expContacto').value.trim(),
-        correo: $('expCorreo').value.trim(),
-        direccion: $('expDireccion').value.trim(),
-        municipio: $('expMunicipio').value.trim(),
-        estado: $('expEstado').value.trim(),
-        status: $('expStatus').value,
-        prioridad: $('expPrioridad').value,
-        etapa: $('expEtapa').value.trim(),
-        avance: Math.min(100, Math.max(0, Number($('expAvance').value || 0))),
-        fechaInicio: $('expFechaInicio').value,
-        fechaEntrega: $('expFechaEntrega').value,
-        cotizacion: Number($('expCotizacion').value || 0),
-        anticipo: Number($('expAnticipo').value || 0),
-        pagoStatus: $('expPagoStatus').value,
-        esperaDe: $('expEsperaDe').value,
-        pendiente: $('expPendiente').value.trim(),
-        documentos: $('expDocumentos').value.trim(),
-        notas: $('expNotas').value.trim(),
-        updatedAt: new Date().toISOString()
-      };
-    }
+  <div class="gh-section">
+    <div class="gh-section-head">
+      <div class="gh-section-title">Checklist de documentos</div>
+    </div>
+    <div class="gh-job">
+      ${(j.checklist&&j.checklist.length) ? j.checklist.map(c=>`
+        <div class="gh-check-item ${c.done?'done':''}">
+          <input type="checkbox" class="gh-checkbox" ${c.done?'checked':''} onchange="ghToggleChecklistItem('${j.id}','${c.id}')">
+          <span style="flex:1;">${escapeHtml(c.label)}</span>
+          <button class="gh-item-remove" onclick="ghRemoveChecklistItem('${j.id}','${c.id}')" title="Eliminar">×</button>
+        </div>`).join('') : `<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Sin documentos en la lista.</div>`}
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <input class="gh-input" id="gh-check-input" placeholder="Agregar documento requerido...">
+        <button class="gh-btn secondary small" onclick="ghAddChecklistItem('${j.id}')">${iconPlus()} Agregar</button>
+      </div>
+    </div>
+  </div>
 
-    function readCitaForm() {
-      const titulo = $('citaTitulo').value.trim();
-      const fecha = $('citaFecha').value;
-      if (!titulo || !fecha) {
-        alert('Captura al menos el título y la fecha de la cita.');
-        return null;
-      }
-      return {
-        id: state.editingCitaId || uid(),
-        titulo,
-        tipo: $('citaTipo').value,
-        expedienteId: $('citaExpediente').value,
-        responsable: $('citaResponsable').value.trim(),
-        fecha,
-        hora: $('citaHora').value,
-        lugar: $('citaLugar').value.trim(),
-        reminder: Number($('citaReminder').value || 60),
-        status: $('citaStatus').value,
-        notas: $('citaNotas').value.trim(),
-        notified: false,
-        updatedAt: new Date().toISOString()
-      };
-    }
+  <div class="gh-section">
+    <div class="gh-section-head">
+      <div class="gh-section-title">Presupuesto${relBudgets.length>1?'s':''} ${relBudgets.length?`· Total: ${fmtMoney(grandTotal)}`:''}</div>
+      <button class="gh-btn secondary small" onclick="ghOpenNewBudget('${j.id}')">${iconPlus()} Agregar</button>
+    </div>
+    ${relBudgets.length===0 ? emptyState('Este trabajo aún no tiene presupuesto.') : relBudgets.map(b=>budgetCard(b)).join('')}
+  </div>
 
-    async function upsertExpediente() {
-      const expediente = readExpedienteForm();
-      if (!expediente) return;
-      try {
-        if (state.editingExpedienteId && state.expedientes.some((item) => item.id === expediente.id)) {
-          const payload = { ...expediente };
-          delete payload.id;
-          await updateDoc(doc(db, 'expedientes', expediente.id), payload);
-          const index = state.expedientes.findIndex((item) => item.id === expediente.id);
-          if (index >= 0) state.expedientes[index] = { ...state.expedientes[index], ...expediente };
-        } else {
-          const payload = { ...expediente };
-          delete payload.id;
-          const ref = await addDoc(expedientesRef, payload);
-          expediente.id = ref.id;
-          state.expedientes.unshift(expediente);
-        }
-        saveLocalBackup();
-        refreshAll();
-        clearExpedienteForm();
-        setCloudStatus('Nube: conectada');
-      } catch (error) {
-        console.error('No se pudo guardar el expediente en Firebase', error);
-        alert('No se pudo guardar el expediente en Firebase. Revisa tus reglas de Firestore.');
-        setCloudStatus('Nube: error al guardar');
-      }
-    }
+  <div class="gh-section">
+    <div class="gh-section-head">
+      <div class="gh-section-title">Citas</div>
+      <button class="gh-btn secondary small" onclick="ghOpenNewAppt('${j.id}')">${iconPlus()} Agregar</button>
+    </div>
+    ${relAppts.length===0 ? emptyState('Este trabajo aún no tiene citas agendadas.') : relAppts.map(a=>apptRow(a)).join('')}
+  </div>
 
-    async function upsertCita() {
-      const cita = readCitaForm();
-      if (!cita) return;
-      const current = state.citas.find((item) => item.id === cita.id);
-      if (current) cita.notified = false;
-      try {
-        if (state.editingCitaId && state.citas.some((item) => item.id === cita.id)) {
-          const payload = { ...cita };
-          delete payload.id;
-          await updateDoc(doc(db, 'citas', cita.id), payload);
-          const index = state.citas.findIndex((item) => item.id === cita.id);
-          if (index >= 0) state.citas[index] = { ...state.citas[index], ...cita };
-        } else {
-          const payload = { ...cita };
-          delete payload.id;
-          const ref = await addDoc(citasRef, payload);
-          cita.id = ref.id;
-          state.citas.unshift(cita);
-        }
-        saveLocalBackup();
-        refreshAll();
-        clearCitaForm();
-        setCloudStatus('Nube: conectada');
-      } catch (error) {
-        console.error('No se pudo guardar la cita en Firebase', error);
-        alert('No se pudo guardar la cita en Firebase. Revisa tus reglas de Firestore.');
-        setCloudStatus('Nube: error al guardar');
-      }
-    }
+  <div class="gh-section">
+    <div class="gh-section-title" style="margin-bottom:10px;">Bitácora</div>
+    <div class="gh-job" style="margin-bottom:10px;">
+      <div style="display:flex; gap:8px;">
+        <input class="gh-input" id="gh-log-input" placeholder="Agregar una nota a la bitácora...">
+        <button class="gh-btn secondary small" onclick="ghAddManualJobLog('${j.id}')">Agregar</button>
+      </div>
+    </div>
+    ${(j.log&&j.log.length) ? `<div class="gh-job">
+      ${j.log.slice().sort((a,b)=>b.ts-a.ts).map(l=>`<div class="gh-log-entry"><span class="gh-log-time">${fmtDateTime(l.ts)}</span><span>${escapeHtml(l.text)}</span></div>`).join('')}
+    </div>` : emptyState('Sin movimientos registrados todavía.')}
+  </div>
+  `;
+}
 
-    async function deleteExpediente() {
-      if (!state.editingExpedienteId) return;
-      if (!confirm('¿Eliminar este expediente?')) return;
-      const expId = state.editingExpedienteId;
-      try {
-        await deleteDoc(doc(db, 'expedientes', expId));
-        state.expedientes = state.expedientes.filter((item) => item.id !== expId);
-        state.citas = state.citas.map((cita) => cita.expedienteId === expId ? { ...cita, expedienteId: '' } : cita);
-        saveLocalBackup();
-        refreshAll();
-        clearExpedienteForm();
-        setCloudStatus('Nube: conectada');
-      } catch (error) {
-        console.error('No se pudo eliminar el expediente', error);
-        alert('No se pudo eliminar el expediente en Firebase.');
-        setCloudStatus('Nube: error al eliminar');
-      }
-    }
+function viewAppts(){
+  const list = state.appointments.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  const upcoming = list.filter(a=>daysUntil(a.date)>=0);
+  const past = list.filter(a=>daysUntil(a.date)<0).reverse();
+  return `
+  <div class="gh-topbar">
+    <div>
+      <h1 class="gh-title">Citas</h1>
+      <div class="gh-subtitle">${state.appointments.length} registradas</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="gh-btn secondary" onclick="ghDownloadAllAppts()">📅 Exportar a calendario</button>
+      <button class="gh-btn" onclick="ghOpenNewAppt()">${iconPlus()} Nueva cita</button>
+    </div>
+  </div>
 
-    async function deleteCita() {
-      if (!state.editingCitaId) return;
-      if (!confirm('¿Eliminar esta cita?')) return;
-      try {
-        await deleteDoc(doc(db, 'citas', state.editingCitaId));
-        state.citas = state.citas.filter((item) => item.id !== state.editingCitaId);
-        saveLocalBackup();
-        refreshAll();
-        clearCitaForm();
-        setCloudStatus('Nube: conectada');
-      } catch (error) {
-        console.error('No se pudo eliminar la cita', error);
-        alert('No se pudo eliminar la cita en Firebase.');
-        setCloudStatus('Nube: error al eliminar');
-      }
-    }
+  <div class="gh-section">
+    <div class="gh-section-head"><div class="gh-section-title">Próximas</div></div>
+    ${upcoming.length===0 ? emptyState('No hay citas próximas.') : upcoming.map(a=>apptRow(a)).join('')}
+  </div>
+  ${past.length ? `
+  <div class="gh-section">
+    <div class="gh-section-head"><div class="gh-section-title">Pasadas</div></div>
+    ${past.slice(0,8).map(a=>apptRow(a)).join('')}
+  </div>` : ''}
+  `;
+}
 
-    function populateExpedienteSelects() {
-      const citaSelect = $('citaExpediente');
-      const filterServicio = $('filterServicio');
-      const selectedCitaValue = citaSelect.value;
-      const selectedServiceValue = filterServicio.value;
+function viewClients(){
+  const list = state.clients.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  return `
+  <div class="gh-topbar">
+    <div>
+      <h1 class="gh-title">Clientes</h1>
+      <div class="gh-subtitle">${state.clients.length} en tu directorio</div>
+    </div>
+    <button class="gh-btn" onclick="ghOpenNewClient()">${iconPlus()} Agregar cliente</button>
+  </div>
+  ${list.length===0 ? emptyState('Aún no tienes clientes guardados.') :
+    list.map(c=>{
+      const nJobs = state.jobs.filter(j=>(j.client||'').trim().toLowerCase()===(c.name||'').trim().toLowerCase()).length;
+      return `
+      <div class="gh-client-card">
+        <div class="gh-avatar">${(c.name||'?').trim().slice(0,1).toUpperCase()}</div>
+        <div style="flex:1;cursor:pointer;" onclick="ghOpenClientDetail('${c.id}')">
+          <div style="font-weight:600;font-size:14px">${escapeHtml(c.name)}</div>
+          <div style="font-size:12px;color:var(--ink-soft)">${escapeHtml(c.phone||'Sin teléfono')}${c.email?` · ${escapeHtml(c.email)}`:''} · ${nJobs} trabajo(s)</div>
+        </div>
+        <button class="gh-btn ghost small" onclick="ghOpenClientDetail('${c.id}')">Ver →</button>
+        <button class="gh-btn ghost small" onclick="ghEditClient('${c.id}')">${iconEdit()}</button>
+        <button class="gh-btn ghost small" onclick="ghDeleteClient('${c.id}')">${iconTrash()}</button>
+      </div>`;
+    }).join('')}
+  `;
+}
 
-      citaSelect.innerHTML = '<option value="">Sin vincular</option>';
-      filterServicio.innerHTML = '<option value="">Todos</option>';
+function viewClientDetail(){
+  const name = state.selectedClientName;
+  const client = state.clients.find(c=>(c.name||'').trim().toLowerCase()===(name||'').trim().toLowerCase());
+  const norm = (name||'').trim().toLowerCase();
+  const jobs = state.jobs.filter(j=>(j.client||'').trim().toLowerCase()===norm);
+  const appts = state.appointments.filter(a=>(a.client||'').trim().toLowerCase()===norm).sort((a,b)=>a.date.localeCompare(b.date));
+  const budgets = state.budgets.filter(b=>(b.client||'').trim().toLowerCase()===norm);
+  const totalFacturado = budgets.reduce((s,b)=>s+budgetTotal(b).total,0);
+  const totalPagado = budgets.reduce((s,b)=>s+budgetTotal(b).paid,0);
 
-      const services = new Set();
-      state.expedientes.forEach((exp) => {
-        services.add(exp.servicio || 'Otro');
-        const option = document.createElement('option');
-        option.value = exp.id;
-        option.textContent = expedienteLabel(exp);
-        citaSelect.appendChild(option);
-      });
+  return `
+  <button class="gh-btn ghost small" style="margin-bottom:14px;" onclick="ghSetView('clients')">← Volver a clientes</button>
+  <div class="gh-topbar">
+    <div>
+      <h1 class="gh-title">${escapeHtml(name)}</h1>
+      <div class="gh-subtitle">${client?escapeHtml(client.phone||'Sin teléfono'):'No está en tu directorio todavía'}</div>
+    </div>
+    ${client?`<button class="gh-btn secondary" onclick="ghEditClient('${client.id}')">${iconEdit()} Editar</button>`:
+      `<button class="gh-btn" onclick="ghOpenNewClientFromDetail()">${iconPlus()} Guardar en directorio</button>`}
+  </div>
 
-      Array.from(services).sort().forEach((service) => {
-        const option = document.createElement('option');
-        option.value = service;
-        option.textContent = service;
-        filterServicio.appendChild(option);
-      });
+  <div class="gh-stats" style="grid-template-columns:repeat(3,1fr);">
+    <div class="gh-stat"><div class="gh-stat-num">${jobs.length}</div><div class="gh-stat-label">Trabajos</div></div>
+    <div class="gh-stat"><div class="gh-stat-num">${fmtMoney(totalFacturado)}</div><div class="gh-stat-label">Total presupuestado</div></div>
+    <div class="gh-stat"><div class="gh-stat-num">${fmtMoney(totalPagado)}</div><div class="gh-stat-label">Total pagado</div></div>
+  </div>
 
-      citaSelect.value = selectedCitaValue || '';
-      filterServicio.value = Array.from(filterServicio.options).some((opt) => opt.value === selectedServiceValue) ? selectedServiceValue : '';
-    }
+  <div class="gh-section">
+    <div class="gh-section-title" style="margin-bottom:10px;">Trabajos</div>
+    ${jobs.length===0?emptyState('Sin trabajos registrados para este cliente.'):jobs.map(j=>jobCard(j)).join('')}
+  </div>
+  <div class="gh-section">
+    <div class="gh-section-title" style="margin-bottom:10px;">Citas</div>
+    ${appts.length===0?emptyState('Sin citas registradas.'):appts.map(a=>apptRow(a)).join('')}
+  </div>
+  <div class="gh-section">
+    <div class="gh-section-title" style="margin-bottom:10px;">Presupuestos</div>
+    ${budgets.length===0?emptyState('Sin presupuestos registrados.'):budgets.map(b=>budgetCard(b)).join('')}
+  </div>
+  `;
+}
 
-    function renderStats() {
-      const activos = state.expedientes.filter((item) => ['Activo', 'Prospección', 'En espera'].includes(item.status)).length;
-      const now = new Date();
-      const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const proximas = state.citas.filter((cita) => {
-        if (!cita.fecha || ['Realizada', 'Cancelada'].includes(cita.status)) return false;
-        const date = new Date(`${cita.fecha}T${cita.hora || '00:00'}:00`);
-        return date >= now && date <= sevenDays;
-      }).length;
-      const cobranza = state.expedientes.reduce((sum, exp) => {
-        if (exp.pagoStatus === 'Pagado') return sum;
-        return sum + getSaldoPendiente(exp);
-      }, 0);
+function viewTasks(){
+  const list = state.tasks.slice().sort((a,b)=>{
+    if(!!a.done !== !!b.done) return a.done?1:-1;
+    return (a.dueDate||'9999').localeCompare(b.dueDate||'9999');
+  });
+  return `
+  <div class="gh-topbar">
+    <div>
+      <h1 class="gh-title">Tareas</h1>
+      <div class="gh-subtitle">${state.tasks.filter(t=>!t.done).length} pendientes</div>
+    </div>
+    <button class="gh-btn" onclick="ghOpenNewTask()">${iconPlus()} Nueva tarea</button>
+  </div>
+  ${list.length===0 ? emptyState('No hay tareas registradas.') : list.map(t=>taskRow(t)).join('')}
+  `;
+}
 
-      $('totalExpedientes').textContent = state.expedientes.length;
-      $('expedientesActivos').textContent = activos;
-      $('citasProximas').textContent = proximas;
-      $('cobranzaPendiente').textContent = money(cobranza);
-    }
+function taskRow(t){
+  const member = state.team.find(m=>m.id===t.assignedTo);
+  const job = state.jobs.find(j=>j.id===t.jobId);
+  return `
+  <div class="gh-task-row ${t.done?'done':''}">
+    <input type="checkbox" class="gh-checkbox" ${t.done?'checked':''} onchange="ghToggleTask('${t.id}')">
+    <div style="flex:1;">
+      <div class="gh-task-title ${t.done?'done':''}">${escapeHtml(t.title)}</div>
+      <div class="gh-task-meta">${member?escapeHtml(member.name):'Sin asignar'}${t.dueDate?` · Vence: ${fmtDate(t.dueDate)}`:''}${job?` · ${escapeHtml(job.title)}`:''}</div>
+    </div>
+    <button class="gh-btn ghost small" onclick="ghDeleteTask('${t.id}')">${iconTrash()}</button>
+  </div>`;
+}
 
-    function renderExpedientes() {
-      const search = $('searchExpedientes').value.trim().toLowerCase();
-      const servicio = $('filterServicio').value;
-      const estado = $('filterEstadoExp').value;
-      const prioridad = $('filterPrioridadExp').value;
-      const wrap = $('expedientesList');
+function viewReports(){
+  const months = {};
+  state.budgets.forEach(b=>{
+    const key = new Date(b.createdAt||Date.now()).toISOString().slice(0,7);
+    months[key] = months[key] || {presupuestado:0, cobrado:0};
+    months[key].presupuestado += budgetTotal(b).total;
+  });
+  state.budgets.forEach(b=>{
+    (b.payments||[]).forEach(p=>{
+      const key = (p.date||'').slice(0,7);
+      months[key] = months[key] || {presupuestado:0, cobrado:0};
+      months[key].cobrado += Number(p.amount)||0;
+    });
+  });
+  const monthKeys = Object.keys(months).sort().reverse();
+  const monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fmtMonth = k=>{ const [y,m]=k.split('-'); return `${monthNames[parseInt(m,10)-1]} ${y}`; };
 
-      const records = [...state.expedientes].filter((exp) => {
-        const haystack = [exp.numero, exp.nombre, exp.cliente, exp.servicio, exp.direccion, exp.municipio].join(' ').toLowerCase();
-        if (search && !haystack.includes(search)) return false;
-        if (servicio && exp.servicio !== servicio) return false;
-        if (estado && exp.status !== estado) return false;
-        if (prioridad && exp.prioridad !== prioridad) return false;
-        return true;
-      }).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+  const byType = {};
+  TYPES.forEach(t=>byType[t.id]={count:0, total:0});
+  state.jobs.forEach(j=>{ if(byType[j.type]) byType[j.type].count++; });
+  state.budgets.forEach(b=>{
+    const job = state.jobs.find(j=>j.id===b.jobId);
+    const type = job ? job.type : null;
+    if(type && byType[type]) byType[type].total += budgetTotal(b).total;
+  });
 
-      if (!records.length) {
-        wrap.innerHTML = '<div class="empty-state">No hay expedientes con esos filtros.</div>';
-        return;
-      }
+  const totalPresupuestado = state.budgets.reduce((s,b)=>s+budgetTotal(b).total,0);
+  const totalCobrado = state.budgets.reduce((s,b)=>s+budgetTotal(b).paid,0);
 
-      wrap.innerHTML = records.map((exp) => {
-        const prioridadClass = `priority-${(exp.prioridad || '').toLowerCase()}`;
-        const pagoClass = `payment-${(exp.pagoStatus || '').toLowerCase().replace(/\s+/g, '-')}`;
-        return `
-          <article class="record-card">
-            <div class="record-top">
-              <div>
-                <h3>${expedienteLabel(exp)}</h3>
-                <div class="subtle">${exp.cliente || 'Sin cliente'} · ${exp.direccion || 'Sin dirección'}</div>
-              </div>
-              <div class="record-actions">
-                <button class="small-btn secondary" data-action="edit-expediente" data-id="${exp.id}">Editar</button>
-              </div>
-            </div>
-            <div class="badge-row">
-              <span class="badge service">${exp.servicio || 'Otro'}</span>
-              <span class="badge status">${exp.status || 'Activo'}</span>
-              <span class="badge ${prioridadClass}">${exp.prioridad || 'Media'}</span>
-              <span class="badge ${pagoClass}">${exp.pagoStatus || 'Pendiente'}</span>
-              <span class="badge pending">En espera de: ${exp.esperaDe || 'Nadie'}</span>
-            </div>
-            <div class="progress-block">
-              <strong>Avance ${Number(exp.avance || 0)}%</strong>
-              <div class="progress-bar"><div class="progress-fill" style="width:${Number(exp.avance || 0)}%"></div></div>
-            </div>
-            <div class="two-col">
-              <div class="info-box">
-                <strong>Operación</strong>
-                <div class="subtle">Etapa: ${exp.etapa || 'No definida'}</div>
-                <div class="subtle">Inicio: ${formatDate(exp.fechaInicio)}</div>
-                <div class="subtle">Entrega: ${formatDate(exp.fechaEntrega)}</div>
-                <div class="subtle">Pendiente: ${exp.pendiente || 'Sin bloqueos registrados'}</div>
-              </div>
-              <div class="info-box">
-                <strong>Cobranza</strong>
-                <div class="subtle">Cotización: ${money(exp.cotizacion)}</div>
-                <div class="subtle">Anticipo: ${money(exp.anticipo)}</div>
-                <div class="subtle">Saldo: ${money(getSaldoPendiente(exp))}</div>
-                <div class="subtle">Contacto: ${exp.contacto || 'Sin contacto'} ${exp.correo ? `· ${exp.correo}` : ''}</div>
-              </div>
-            </div>
-            <div class="info-box">
-              <strong>Documentos y notas</strong>
-              <div class="subtle">Documentos: ${exp.documentos || 'Sin documentos registrados'}</div>
-              <div class="subtle">Notas: ${exp.notas || 'Sin notas internas'}</div>
-            </div>
-          </article>
-        `;
-      }).join('');
-    }
+  return `
+  <div class="gh-topbar">
+    <div><h1 class="gh-title">Reportes</h1><div class="gh-subtitle">Ingresos y desempeño</div></div>
+  </div>
 
-    function renderCitas() {
-      const search = $('searchCitas').value.trim().toLowerCase();
-      const tipo = $('filterTipoCita').value;
-      const estado = $('filterEstadoCita').value;
-      const proximidad = $('filterProximidadCita').value;
-      const wrap = $('citasList');
-      const now = new Date();
+  <div class="gh-stats" style="grid-template-columns:repeat(3,1fr);">
+    <div class="gh-stat"><div class="gh-stat-num">${fmtMoney(totalPresupuestado)}</div><div class="gh-stat-label">Total presupuestado</div></div>
+    <div class="gh-stat"><div class="gh-stat-num">${fmtMoney(totalCobrado)}</div><div class="gh-stat-label">Total cobrado</div></div>
+    <div class="gh-stat"><div class="gh-stat-num">${fmtMoney(totalPresupuestado-totalCobrado)}</div><div class="gh-stat-label">Por cobrar</div></div>
+  </div>
 
-      const records = [...state.citas].filter((cita) => {
-        const expediente = getExpedienteById(cita.expedienteId);
-        const expText = expediente ? expedienteLabel(expediente) : '';
-        const haystack = [cita.titulo, cita.tipo, cita.responsable, cita.lugar, expText].join(' ').toLowerCase();
-        if (search && !haystack.includes(search)) return false;
-        if (tipo && cita.tipo !== tipo) return false;
-        if (estado && cita.status !== estado) return false;
-        if (proximidad) {
-          const citaDate = new Date(`${cita.fecha}T${cita.hora || '00:00'}:00`);
-          if (proximidad === 'hoy') {
-            const sameDay = citaDate.toDateString() === now.toDateString();
-            if (!sameDay) return false;
-          }
-          if (proximidad === '7') {
-            const limit = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-            if (!(citaDate >= now && citaDate <= limit)) return false;
-          }
-          if (proximidad === '30') {
-            const limit = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-            if (!(citaDate >= now && citaDate <= limit)) return false;
-          }
-        }
-        return true;
-      }).sort((a, b) => {
-        const da = new Date(`${a.fecha}T${a.hora || '00:00'}:00`).getTime();
-        const db = new Date(`${b.fecha}T${b.hora || '00:00'}:00`).getTime();
-        return da - db;
-      });
+  <div class="gh-section">
+    <div class="gh-section-title" style="margin-bottom:10px;">Por mes</div>
+    <div class="gh-job">
+      ${monthKeys.length===0 ? emptyState('Aún no hay datos suficientes.') : monthKeys.map(k=>`
+        <div class="gh-report-row">
+          <span style="text-transform:capitalize;">${fmtMonth(k)}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;">Presupuestado: ${fmtMoney(months[k].presupuestado)} · Cobrado: ${fmtMoney(months[k].cobrado)}</span>
+        </div>`).join('')}
+    </div>
+  </div>
 
-      if (!records.length) {
-        wrap.innerHTML = '<div class="empty-state">No hay citas con esos filtros.</div>';
-        return;
-      }
+  <div class="gh-section">
+    <div class="gh-section-title" style="margin-bottom:10px;">Por tipo de trabajo</div>
+    <div class="gh-job">
+      ${TYPES.map(t=>`
+        <div class="gh-report-row">
+          <span>${t.label}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;">${byType[t.id].count} trabajo(s) · ${fmtMoney(byType[t.id].total)}</span>
+        </div>`).join('')}
+    </div>
+  </div>
+  `;
+}
 
-      wrap.innerHTML = records.map((cita) => {
-        const expediente = getExpedienteById(cita.expedienteId);
-        return `
-          <article class="record-card">
-            <div class="record-top">
-              <div>
-                <h3>${cita.titulo}</h3>
-                <div class="subtle">${formatDateTime(cita.fecha, cita.hora)} · ${cita.lugar || 'Sin lugar definido'}</div>
-              </div>
-              <div class="record-actions">
-                <button class="small-btn secondary" data-action="edit-cita" data-id="${cita.id}">Editar</button>
-              </div>
-            </div>
-            <div class="badge-row">
-              <span class="badge service">${cita.tipo || 'Otro'}</span>
-              <span class="badge status">${cita.status || 'Programada'}</span>
-              <span class="badge pending">Recordatorio: ${cita.reminder || 60} min antes</span>
-            </div>
-            <div class="two-col">
-              <div class="info-box">
-                <strong>Detalle de cita</strong>
-                <div class="subtle">Responsable: ${cita.responsable || 'Sin responsable'}</div>
-                <div class="subtle">Expediente: ${expediente ? expedienteLabel(expediente) : 'Sin vincular'}</div>
-                <div class="subtle">Estado: ${cita.status || 'Programada'}</div>
-              </div>
-              <div class="info-box">
-                <strong>Notas</strong>
-                <div class="subtle">${cita.notas || 'Sin notas'}</div>
-              </div>
-            </div>
-          </article>
-        `;
-      }).join('');
-    }
+function viewTeam(){
+  return `
+  <div class="gh-topbar">
+    <div>
+      <h1 class="gh-title">Equipo</h1>
+      <div class="gh-subtitle">${state.team.length} integrantes</div>
+    </div>
+    <button class="gh-btn" onclick="ghOpenNewTeam()">${iconPlus()} Agregar integrante</button>
+  </div>
+  ${state.team.length===0 ? emptyState('Agrega a tu equipo para poder asignarles trabajos.') :
+    state.team.map(m=>{
+      const assigned = state.jobs.filter(j=>j.assignedTo===m.id && j.status!=='terminado').length;
+      return `
+      <div class="gh-team-card">
+        <div class="gh-avatar">${(m.name||'?').trim().slice(0,1).toUpperCase()}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${escapeHtml(m.name)}</div>
+          <div style="font-size:12px;color:var(--ink-soft)">${escapeHtml(m.role)} · ${assigned} trabajo(s) activo(s)</div>
+        </div>
+        <button class="gh-btn ghost small" onclick="ghDeleteTeam('${m.id}')">${iconTrash()}</button>
+      </div>`;
+    }).join('')}
+  `;
+}
 
-    function clearReminderTimers() {
-      state.reminderTimers.forEach((timer) => clearTimeout(timer));
-      state.reminderTimers = [];
-    }
+function viewBudgets(){
+  const list = state.budgets.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  return `
+  <div class="gh-topbar">
+    <div>
+      <h1 class="gh-title">Presupuestos</h1>
+      <div class="gh-subtitle">${state.budgets.length} en total</div>
+    </div>
+    <button class="gh-btn" onclick="ghOpenNewBudget()">${iconPlus()} Nuevo presupuesto</button>
+  </div>
+  ${list.length===0 ? emptyState('Aún no tienes presupuestos. Crea uno para cotizar un trabajo.') : list.map(b=>budgetCard(b)).join('')}
+  `;
+}
 
-    function scheduleNotifications() {
-      clearReminderTimers();
-      if (!('Notification' in window)) return;
-      if (Notification.permission !== 'granted') return;
+function budgetCard(b){
+  const t = budgetTotal(b);
+  const sc = BUDGET_STATUS_COLOR[b.status] || BUDGET_STATUS_COLOR.borrador;
+  const job = state.jobs.find(j=>j.id===b.jobId);
+  return `
+  <div class="gh-budget-card">
+    <div class="gh-job-top">
+      <div>
+        <div class="gh-job-title">${escapeHtml(b.title)}</div>
+        <div class="gh-job-meta">${escapeHtml(b.client||'Sin cliente')}${job?` · ${escapeHtml(job.title)}`:''}</div>
+      </div>
+      <span class="gh-budget-status" style="background:${sc.bg};color:${sc.fg}">${BUDGET_STATUS[b.status]||'Borrador'}${b.status==='aprobado'&&b.approvedAt?` · ${fmtDate(b.approvedAt)}`:''}</span>
+    </div>
+    <div style="margin-top:4px;">
+      ${(b.items||[]).map(it=>`<div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);padding:3px 0;"><span>${escapeHtml(it.concept)}</span><span style="font-family:'IBM Plex Mono',monospace">${fmtMoney(it.amount)}</span></div>`).join('')}
+    </div>
+    <div class="gh-budget-total"><span class="label">Total${b.iva?' (IVA incluido)':''}</span><span class="value">${fmtMoney(t.total)}</span></div>
+    ${(b.payments&&b.payments.length)?`
+    <div style="margin-top:6px;">
+      ${b.payments.map(p=>`<div class="gh-payment-row"><span>Pago ${fmtDate(p.date)}</span><span style="display:flex;align-items:center;gap:6px;">${fmtMoney(p.amount)} <button class="gh-item-remove" onclick="ghDeletePayment('${b.id}','${p.id}')" title="Eliminar pago">×</button></span></div>`).join('')}
+    </div>`:''}
+    <div class="gh-paid-line">
+      <span>Pagado: ${fmtMoney(t.paid)}</span>
+      <span style="font-weight:700;color:${t.balance>0?'var(--brick)':'var(--moss)'}">Saldo: ${fmtMoney(t.balance)}</span>
+    </div>
+    <div class="gh-job-foot" style="margin-top:8px;">
+      <button class="gh-btn secondary small" onclick="ghOpenNewPayment('${b.id}')">${iconPlus()} Registrar pago</button>
+      <div class="gh-job-actions">
+        <button class="gh-btn ghost small" onclick="ghPrintBudget('${b.id}')" title="Descargar PDF">🖨️ PDF</button>
+        <button class="gh-wa-btn" onclick="ghSendBudgetWhatsapp('${b.id}')">${iconWhatsapp()} WhatsApp</button>
+        <button class="gh-btn ghost small" onclick="ghEditBudget('${b.id}')">${iconEdit()}</button>
+        <button class="gh-btn ghost small" onclick="ghDeleteBudget('${b.id}')">${iconTrash()}</button>
+      </div>
+    </div>
+  </div>`;
+}
 
-      const now = Date.now();
-      state.citas.forEach((cita) => {
-        if (!cita.fecha || ['Realizada', 'Cancelada'].includes(cita.status)) return;
-        const citaTime = new Date(`${cita.fecha}T${cita.hora || '00:00'}:00`).getTime();
-        const remindAt = citaTime - (Number(cita.reminder || 60) * 60 * 1000);
-        const delay = remindAt - now;
-        if (delay <= 0 || delay > 2147483647) return;
-        const timer = setTimeout(() => {
-          const expediente = getExpedienteById(cita.expedienteId);
-          new Notification(`Recordatorio: ${cita.titulo}`, {
-            body: `${formatDateTime(cita.fecha, cita.hora)} · ${cita.lugar || 'Sin lugar'}${expediente ? ` · ${expedienteLabel(expediente)}` : ''}`
-          });
-        }, delay);
-        state.reminderTimers.push(timer);
-      });
-    }
+/* ---------------- MODAL ---------------- */
+function modal(){
+  if(state.modal==='job') return modalJob();
+  if(state.modal==='appt') return modalAppt();
+  if(state.modal==='team') return modalTeam();
+  if(state.modal==='budget') return modalBudget();
+  if(state.modal==='client') return modalClient();
+  if(state.modal==='task') return modalTask();
+  if(state.modal==='payment') return modalPayment();
+  return '';
+}
 
-    async function enableNotifications() {
-      if (!('Notification' in window)) {
-        alert('Tu navegador no soporta notificaciones.');
-        return;
-      }
-      const result = await Notification.requestPermission();
-      if (result === 'granted') {
-        scheduleNotifications();
-        alert('Notificaciones activadas. Recibirás recordatorios de las citas mientras la app esté abierta.');
-      } else {
-        alert('No se concedió permiso para notificaciones.');
-      }
-    }
+function modalJob(){
+  const d = state.draft;
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">${state.editingId?'Editar trabajo':'Nuevo trabajo'}</div>
+    <div class="gh-field"><label class="gh-label">Título</label><input class="gh-input" id="f-title" value="${escAttr(d.title)}" placeholder="Ej. Avalúo casa Col. Centro"></div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Cliente</label><input class="gh-input" id="f-client" value="${escAttr(d.client)}" placeholder="Nombre del cliente"></div>
+      <div class="gh-field"><label class="gh-label">Tipo</label>
+        <select class="gh-select" id="f-type">${TYPES.map(t=>`<option value="${t.id}" ${d.type===t.id?'selected':''}>${t.label}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Asignado a</label>
+        <select class="gh-select" id="f-assigned">
+          <option value="">Sin asignar</option>
+          ${state.team.map(m=>`<option value="${m.id}" ${d.assignedTo===m.id?'selected':''}>${escapeHtml(m.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="gh-field"><label class="gh-label">Estado</label>
+        <select class="gh-select" id="f-status">${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${d.status===k?'selected':''}>${v}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Fecha inicio</label><input type="date" class="gh-input" id="f-start" value="${d.startDate||''}"></div>
+      <div class="gh-field"><label class="gh-label">Fecha entrega</label><input type="date" class="gh-input" id="f-due" value="${d.dueDate||''}"></div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Prioridad</label>
+        <select class="gh-select" id="f-priority">${Object.entries(PRIORITIES).map(([k,v])=>`<option value="${k}" ${d.priority===k?'selected':''}>${v}</option>`).join('')}</select>
+      </div>
+      <div class="gh-field"><label class="gh-label">Ubicación (colonia/municipio)</label><input class="gh-input" id="f-location" value="${escAttr(d.location)}" placeholder="Ej. Col. Centro, Querétaro"></div>
+    </div>
+    <div class="gh-field">
+      <label class="gh-label">Avance: <span class="gh-range-val" id="f-progress-val">${d.progress||0}%</span></label>
+      <input type="range" min="0" max="100" step="5" id="f-progress" value="${d.progress||0}" style="width:100%" oninput="document.getElementById('f-progress-val').textContent=this.value+'%'">
+    </div>
+    <div class="gh-field"><label class="gh-label">Notas</label><textarea class="gh-textarea" id="f-notes" placeholder="Detalles del trabajo...">${escapeHtml(d.notes||'')}</textarea></div>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghSaveJob()">Guardar</button>
+    </div>
+  </div>
+  </div>`;
+}
 
-    function setFormTab(tab) {
-      const isExp = tab === 'expediente';
-      $('expedienteFormSection').classList.toggle('hidden', !isExp);
-      $('citaFormSection').classList.toggle('hidden', isExp);
-      document.querySelectorAll('[data-form-tab]').forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.formTab === tab);
-      });
-    }
+function modalAppt(){
+  const d = state.draft;
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">${state.editingId?'Editar cita':'Nueva cita'}</div>
+    <div class="gh-field"><label class="gh-label">Título</label><input class="gh-input" id="f-title" value="${escAttr(d.title)}" placeholder="Ej. Visita para levantamiento"></div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Cliente</label><input class="gh-input" id="f-client" value="${escAttr(d.client)}"></div>
+      <div class="gh-field"><label class="gh-label">Teléfono (WhatsApp)</label><input class="gh-input" id="f-phone" value="${escAttr(d.phone)}" placeholder="Ej. 4421234567"></div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field" style="grid-column:1/-1"><label class="gh-label">Trabajo relacionado</label>
+        <select class="gh-select" id="f-job">
+          <option value="">Ninguno</option>
+          ${state.jobs.map(j=>`<option value="${j.id}" ${d.jobId===j.id?'selected':''}>${escapeHtml(j.title)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Fecha</label><input type="date" class="gh-input" id="f-date" value="${d.date||''}"></div>
+      <div class="gh-field"><label class="gh-label">Hora</label><input type="time" class="gh-input" id="f-time" value="${d.time||''}"></div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Lugar</label><input class="gh-input" id="f-location" value="${escAttr(d.location)}" placeholder="Dirección o sitio"></div>
+      <div class="gh-field"><label class="gh-label">Recordatorio</label>
+        <select class="gh-select" id="f-reminder">${REMINDER_OPTS.map(r=>`<option value="${r.id}" ${d.reminder===r.id?'selected':''}>${r.label}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="gh-field"><label class="gh-label">Notas</label><textarea class="gh-textarea" id="f-notes">${escapeHtml(d.notes||'')}</textarea></div>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghSaveAppt()">Guardar</button>
+    </div>
+  </div>
+  </div>`;
+}
 
-    function setViewTab(tab) {
-      const isExp = tab === 'expedientes';
-      $('expedientesViewSection').classList.toggle('hidden', !isExp);
-      $('citasViewSection').classList.toggle('hidden', isExp);
-      document.querySelectorAll('[data-view-tab]').forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.viewTab === tab);
-      });
-    }
+function modalTeam(){
+  const d = state.draft;
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">Agregar integrante</div>
+    <div class="gh-field"><label class="gh-label">Nombre</label><input class="gh-input" id="f-name" value="${escAttr(d.name)}" placeholder="Nombre completo"></div>
+    <div class="gh-field"><label class="gh-label">Rol</label>
+      <select class="gh-select" id="f-role">${ROLES.map(r=>`<option value="${r}" ${d.role===r?'selected':''}>${r}</option>`).join('')}</select>
+    </div>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghSaveTeam()">Guardar</button>
+    </div>
+  </div>
+  </div>`;
+}
 
-    function handleCardActions(event) {
-      const button = event.target.closest('[data-action]');
-      if (!button) return;
-      const { action, id } = button.dataset;
-      if (action === 'edit-expediente') {
-        const exp = getExpedienteById(id);
-        if (exp) fillExpedienteForm(exp);
-      }
-      if (action === 'edit-cita') {
-        const cita = state.citas.find((item) => item.id === id);
-        if (cita) fillCitaForm(cita);
-      }
-    }
+function modalClient(){
+  const d = state.draft;
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">${state.editingId?'Editar cliente':'Nuevo cliente'}</div>
+    <div class="gh-field"><label class="gh-label">Nombre</label><input class="gh-input" id="f-name" value="${escAttr(d.name)}" placeholder="Nombre completo o empresa"></div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Teléfono</label><input class="gh-input" id="f-phone" value="${escAttr(d.phone)}" placeholder="Ej. 4421234567"></div>
+      <div class="gh-field"><label class="gh-label">Correo</label><input class="gh-input" id="f-email" value="${escAttr(d.email)}" placeholder="correo@ejemplo.com"></div>
+    </div>
+    <div class="gh-field"><label class="gh-label">Notas</label><textarea class="gh-textarea" id="f-notes">${escapeHtml(d.notes||'')}</textarea></div>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghSaveClient()">Guardar</button>
+    </div>
+  </div>
+  </div>`;
+}
 
-    function bindEvents() {
-      $('saveExpedienteBtn').addEventListener('click', upsertExpediente);
-      $('clearExpedienteBtn').addEventListener('click', clearExpedienteForm);
-      $('deleteExpedienteBtn').addEventListener('click', deleteExpediente);
-      $('saveCitaBtn').addEventListener('click', upsertCita);
-      $('clearCitaBtn').addEventListener('click', clearCitaForm);
-      $('deleteCitaBtn').addEventListener('click', deleteCita);
-      $('enableNotificationsBtn').addEventListener('click', enableNotifications);
+function modalTask(){
+  const d = state.draft;
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">Nueva tarea</div>
+    <div class="gh-field"><label class="gh-label">Título</label><input class="gh-input" id="f-title" value="${escAttr(d.title)}" placeholder="Ej. Entregar plano a revisión"></div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Asignada a</label>
+        <select class="gh-select" id="f-assigned">
+          <option value="">Sin asignar</option>
+          ${state.team.map(m=>`<option value="${m.id}" ${d.assignedTo===m.id?'selected':''}>${escapeHtml(m.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="gh-field"><label class="gh-label">Fecha límite</label><input type="date" class="gh-input" id="f-due" value="${d.dueDate||''}"></div>
+    </div>
+    <div class="gh-field"><label class="gh-label">Trabajo relacionado</label>
+      <select class="gh-select" id="f-job">
+        <option value="">Ninguno</option>
+        ${state.jobs.map(j=>`<option value="${j.id}" ${d.jobId===j.id?'selected':''}>${escapeHtml(j.title)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghSaveTask()">Guardar</button>
+    </div>
+  </div>
+  </div>`;
+}
 
-      document.querySelectorAll('[data-form-tab]').forEach((btn) => {
-        btn.addEventListener('click', () => setFormTab(btn.dataset.formTab));
-      });
-      document.querySelectorAll('[data-view-tab]').forEach((btn) => {
-        btn.addEventListener('click', () => setViewTab(btn.dataset.viewTab));
-      });
+function modalPayment(){
+  const d = state.draft;
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">Registrar pago</div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Monto</label><input type="number" min="0" step="0.01" class="gh-input" id="f-amount" value="${d.amount||''}" placeholder="0.00"></div>
+      <div class="gh-field"><label class="gh-label">Fecha</label><input type="date" class="gh-input" id="f-pdate" value="${d.date||todayStr()}"></div>
+    </div>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghSavePayment()">Guardar</button>
+    </div>
+  </div>
+  </div>`;
+}
 
-      ['searchExpedientes', 'filterServicio', 'filterEstadoExp', 'filterPrioridadExp'].forEach((id) => {
-        $(id).addEventListener('input', renderExpedientes);
-        $(id).addEventListener('change', renderExpedientes);
-      });
-      ['searchCitas', 'filterTipoCita', 'filterEstadoCita', 'filterProximidadCita'].forEach((id) => {
-        $(id).addEventListener('input', renderCitas);
-        $(id).addEventListener('change', renderCitas);
-      });
+function modalBudget(){
+  const d = state.draft;
+  const items = d.items || [];
+  const t = budgetTotal(d);
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">${state.editingId?'Editar presupuesto':'Nuevo presupuesto'}</div>
+    <div class="gh-field"><label class="gh-label">Título</label><input class="gh-input" id="f-title" value="${escAttr(d.title)}" placeholder="Ej. Levantamiento topográfico terreno 500m2"></div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Cliente</label><input class="gh-input" id="f-client" value="${escAttr(d.client)}"></div>
+      <div class="gh-field"><label class="gh-label">Teléfono (WhatsApp)</label><input class="gh-input" id="f-phone" value="${escAttr(d.phone)}" placeholder="Ej. 4421234567"></div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Trabajo relacionado</label>
+        <select class="gh-select" id="f-job">
+          <option value="">Ninguno</option>
+          ${state.jobs.map(j=>`<option value="${j.id}" ${d.jobId===j.id?'selected':''}>${escapeHtml(j.title)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="gh-field"><label class="gh-label">Estado</label>
+        <select class="gh-select" id="f-bstatus">${Object.entries(BUDGET_STATUS).map(([k,v])=>`<option value="${k}" ${d.status===k?'selected':''}>${v}</option>`).join('')}</select>
+      </div>
+    </div>
 
-      $('expedientesList').addEventListener('click', handleCardActions);
-      $('citasList').addEventListener('click', handleCardActions);
-    }
+    <label class="gh-label">Conceptos</label>
+    <div id="gh-budget-items">
+      ${items.map((it,i)=>`
+        <div class="gh-item-row">
+          <input class="gh-input" placeholder="Concepto" value="${escAttr(it.concept)}" oninput="ghUpdateBudgetItem(${i},'concept',this.value)">
+          <input class="gh-input" type="number" min="0" step="0.01" placeholder="Monto" value="${it.amount||''}" oninput="ghUpdateBudgetItem(${i},'amount',this.value)">
+          <button class="gh-item-remove" onclick="ghRemoveBudgetItem(${i})" title="Eliminar">×</button>
+        </div>`).join('')}
+    </div>
+    <button class="gh-btn secondary small" onclick="ghAddBudgetItem()">${iconPlus()} Agregar concepto</button>
 
-    function refreshAll() {
-      populateExpedienteSelects();
-      renderStats();
-      renderExpedientes();
-      renderCitas();
-      scheduleNotifications();
-    }
+    <div class="gh-field" style="margin-top:14px;">
+      <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;">
+        <input type="checkbox" id="f-iva" ${d.iva?'checked':''} onchange="ghToggleIva(this.checked)"> Incluir IVA (16%)
+      </label>
+    </div>
 
-    function init() {
-      loadData();
-      bindEvents();
-      clearExpedienteForm();
-      clearCitaForm();
-      setFormTab('expediente');
-      setViewTab('expedientes');
-      refreshAll();
-    }
+    <div class="gh-budget-total"><span class="label" id="gh-budget-sub-line">Subtotal: ${fmtMoney(t.sub)}${d.iva?` · IVA: ${fmtMoney(t.iva)}`:''}</span><span class="value" id="gh-budget-total-value">${fmtMoney(t.total)}</span></div>
 
-    init();
-  </script>
-</body>
-</html>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghSaveBudget()">Guardar</button>
+    </div>
+  </div>
+  </div>`;
+}
+
+/* ---------------- ICONS (inline svg, currentColor) ---------------- */
+function iconMark(){
+  return `<svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 22L13 4L23 22" stroke="#8FB4C2" stroke-width="1.8" stroke-linejoin="round"/>
+    <path d="M8 22L13 12L18 22" stroke="#A64B2A" stroke-width="1.8" stroke-linejoin="round"/>
+    <circle cx="13" cy="4" r="1.6" fill="#EDEFEA"/>
+  </svg>`;
+}
+function iconGrid(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>`;}
+function iconLayers(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;}
+function iconCalendar(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;}
+function iconUsers(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.8"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="17" cy="9" r="2.4" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 20c.2-2.6 1.9-4.6 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;}
+function iconChart(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M11 20V4M18 20v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;}
+function iconSearch(){return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;}
+function iconCheck(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M7 12l3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;}
+function iconMoney(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M6 6v12M18 6v12" stroke="currentColor" stroke-width="1.4"/></svg>`;}
+function iconPlus(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;}
+function iconEdit(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 20h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;}
+function iconWhatsapp(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.5A10 10 0 1012 2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 8.3c.2-.5.4-.5.6-.5h.5c.2 0 .4 0 .5.4.2.5.6 1.6.7 1.7.1.1.1.3 0 .4-.1.2-.2.3-.3.4-.1.1-.3.3-.4.4-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1.2-.2.6-.7.8-1 .2-.2.4-.2.6-.1.2.1 1.5.7 1.7.8.2.1.4.2.4.3 0 .1 0 .7-.3 1.3-.2.6-1.3 1.2-1.8 1.2-.5 0-1.7-.2-3.2-1.4-1.8-1.4-3-3.2-3.1-3.4-.1-.2-.9-1.2-.9-2.3 0-1.1.6-1.6.8-1.8z" fill="currentColor"/></svg>`;}
+function iconTrash(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m2 0-1 14a1 1 0 01-1 1H8a1 1 0 01-1-1L6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;}
+
+/* ---------------- UTILS ---------------- */
+function escapeHtml(s){ return (s??'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escAttr(s){ return escapeHtml(s); }
+
+/* ---------------- ACTIONS (exposed globally) ---------------- */
+window.ghSetView = function(v){ state.view=v; state.filterType='todos'; state.filterStatus='todos'; render(); };
+window.ghSearch = function(value){
+  state.searchQuery = value;
+  render();
+  const el = document.getElementById('gh-search-box');
+  if(el){ el.focus(); const pos = value.length; try{ el.setSelectionRange(pos,pos); }catch(e){} }
+};
+window.ghClearSearchAnd = function(fn){ state.searchQuery=''; fn(); };
+window.ghFilter = function(kind, val){ if(kind==='type') state.filterType=val; else state.filterStatus=val; render(); };
+
+window.ghOpenNewJob = function(){ state.modal='job'; state.editingId=null; state.draft={type:'avaluo', status:'en_presupuesto', progress:0, priority:'normal'}; render(); };
+window.ghEditJob = function(id){ const j = state.jobs.find(x=>x.id===id); state.modal='job'; state.editingId=id; state.draft={...j}; render(); };
+window.ghDeleteJob = async function(id){ state.jobs = state.jobs.filter(j=>j.id!==id); render(); await saveKey('jobs', state.jobs); };
+window.ghSaveJob = async function(){
+  const draft = {
+    title: document.getElementById('f-title').value.trim() || 'Sin título',
+    client: document.getElementById('f-client').value.trim(),
+    type: document.getElementById('f-type').value,
+    assignedTo: document.getElementById('f-assigned').value,
+    status: document.getElementById('f-status').value,
+    startDate: document.getElementById('f-start').value,
+    dueDate: document.getElementById('f-due').value,
+    priority: document.getElementById('f-priority').value,
+    location: document.getElementById('f-location').value.trim(),
+    progress: parseInt(document.getElementById('f-progress').value,10),
+    notes: document.getElementById('f-notes').value.trim()
+  };
+  if(state.editingId){
+    const prev = state.jobs.find(j=>j.id===state.editingId);
+    const logs = [];
+    if(prev && prev.status!==draft.status) logs.push(`Estado cambió de "${STATUS[prev.status]}" a "${STATUS[draft.status]}"`);
+    if(prev && Number(prev.progress)!==Number(draft.progress)) logs.push(`Avance actualizado a ${draft.progress}%`);
+    state.jobs = state.jobs.map(j=>j.id===state.editingId?{...j,...draft}:j);
+    state.modal=null; render();
+    for(const l of logs){ await addJobLog(state.editingId, l); }
+  }else{
+    const checklist = (CHECKLIST_TEMPLATES[draft.type]||[]).map(label=>({id:uid(), label, done:false}));
+    const newJob = {id:uid(), createdAt:Date.now(), folio:nextFolio(), checklist, log:[{id:uid(), ts:Date.now(), text:'Trabajo creado'}], ...draft};
+    state.jobs.push(newJob);
+    state.modal=null; render();
+  }
+  await saveKey('jobs', state.jobs);
+};
+
+window.ghOpenJobDetail = function(id){ state.view='jobDetail'; state.selectedJobId=id; render(); };
+
+window.ghOpenNewAppt = function(presetJobId){ state.modal='appt'; state.editingId=null; state.draft={date:todayStr(), reminder:'1day', jobId:presetJobId||''}; render(); };
+window.ghEditAppt = function(id){ const a = state.appointments.find(x=>x.id===id); state.modal='appt'; state.editingId=id; state.draft={...a}; render(); };
+window.ghDeleteAppt = async function(id){ state.appointments = state.appointments.filter(a=>a.id!==id); render(); await saveKey('appointments', state.appointments); };
+window.ghSaveAppt = async function(){
+  const draft = {
+    title: document.getElementById('f-title').value.trim() || 'Sin título',
+    client: document.getElementById('f-client').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    jobId: document.getElementById('f-job').value,
+    date: document.getElementById('f-date').value || todayStr(),
+    time: document.getElementById('f-time').value,
+    location: document.getElementById('f-location').value.trim(),
+    reminder: document.getElementById('f-reminder').value,
+    notes: document.getElementById('f-notes').value.trim()
+  };
+  const isNew = !state.editingId;
+  if(state.editingId){
+    state.appointments = state.appointments.map(a=>a.id===state.editingId?{...a,...draft}:a);
+  }else{
+    state.appointments.push({id:uid(), createdAt:Date.now(), ...draft});
+  }
+  state.modal=null; render();
+  await saveKey('appointments', state.appointments);
+  if(isNew && draft.jobId) await addJobLog(draft.jobId, `Cita agendada: ${draft.title} el ${fmtDate(draft.date)}`);
+};
+
+window.ghOpenNewTeam = function(){ state.modal='team'; state.draft={role:ROLES[0]}; render(); };
+window.ghDeleteTeam = async function(id){ state.team = state.team.filter(m=>m.id!==id); render(); await saveKey('team', state.team); };
+window.ghSaveTeam = async function(){
+  const name = document.getElementById('f-name').value.trim();
+  if(!name){ return; }
+  const role = document.getElementById('f-role').value;
+  state.team.push({id:uid(), name, role});
+  state.modal=null; render();
+  await saveKey('team', state.team);
+};
+
+window.ghDownloadApptICS = function(id){
+  const a = state.appointments.find(x=>x.id===id);
+  if(!a) return;
+  downloadICS(`cita-${(a.title||'gaba').toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}.ics`, apptToICS(a));
+};
+window.ghDownloadAllAppts = function(){
+  const list = state.appointments.filter(a=>daysUntil(a.date)>=0);
+  if(list.length===0) return;
+  downloadICS('citas-gaba-home.ics', allApptsICS(list));
+};
+
+window.ghSendApptWhatsapp = function(id){
+  const a = state.appointments.find(x=>x.id===id);
+  if(!a) return;
+  window.open(waLink(a.phone, apptWaMessage(a)), '_blank');
+};
+
+function syncBudgetFormToDraft(){
+  const d = state.draft;
+  const g = id=>document.getElementById(id);
+  if(g('f-title')) d.title = g('f-title').value;
+  if(g('f-client')) d.client = g('f-client').value;
+  if(g('f-phone')) d.phone = g('f-phone').value;
+  if(g('f-job')) d.jobId = g('f-job').value;
+  if(g('f-bstatus')) d.status = g('f-bstatus').value;
+}
+
+window.ghOpenNewBudget = function(presetJobId){ state.modal='budget'; state.editingId=null; state.draft={status:'borrador', iva:true, jobId:presetJobId||'', items:[{concept:'',amount:''}]}; render(); };
+window.ghEditBudget = function(id){ const b = state.budgets.find(x=>x.id===id); state.modal='budget'; state.editingId=id; state.draft=JSON.parse(JSON.stringify(b)); render(); };
+window.ghDeleteBudget = async function(id){ state.budgets = state.budgets.filter(b=>b.id!==id); render(); await saveKey('budgets', state.budgets); };
+
+window.ghAddBudgetItem = function(){ syncBudgetFormToDraft(); state.draft.items = [...(state.draft.items||[]), {concept:'',amount:''}]; render(); };
+window.ghRemoveBudgetItem = function(i){ syncBudgetFormToDraft(); state.draft.items.splice(i,1); if(state.draft.items.length===0) state.draft.items.push({concept:'',amount:''}); render(); };
+window.ghToggleIva = function(checked){ syncBudgetFormToDraft(); state.draft.iva = checked; render(); };
+window.ghUpdateBudgetItem = function(i, field, value){
+  state.draft.items[i][field] = value;
+  const t = budgetTotal(state.draft);
+  const subEl = document.getElementById('gh-budget-sub-line');
+  const totEl = document.getElementById('gh-budget-total-value');
+  if(subEl) subEl.textContent = `Subtotal: ${fmtMoney(t.sub)}${state.draft.iva?` · IVA: ${fmtMoney(t.iva)}`:''}`;
+  if(totEl) totEl.textContent = fmtMoney(t.total);
+};
+
+window.ghSaveBudget = async function(){
+  syncBudgetFormToDraft();
+  const d = state.draft;
+  const draft = {
+    title: (d.title||'').trim() || 'Sin título',
+    client: (d.client||'').trim(),
+    phone: (d.phone||'').trim(),
+    jobId: d.jobId||'',
+    status: d.status||'borrador',
+    iva: !!d.iva,
+    items: (d.items||[]).filter(it=>it.concept || it.amount).map(it=>({concept:(it.concept||'').trim()||'Concepto', amount:Number(it.amount)||0}))
+  };
+  const isNew = !state.editingId;
+  if(state.editingId){
+    const prev = state.budgets.find(b=>b.id===state.editingId);
+    if(draft.status==='aprobado' && prev && prev.status!=='aprobado') draft.approvedAt = todayStr();
+    state.budgets = state.budgets.map(b=>b.id===state.editingId?{...b,...draft}:b);
+  }else{
+    if(draft.status==='aprobado') draft.approvedAt = todayStr();
+    state.budgets.push({id:uid(), createdAt:Date.now(), payments:[], ...draft});
+  }
+  state.modal=null; render();
+  await saveKey('budgets', state.budgets);
+  if(isNew && draft.jobId){
+    const total = budgetTotal(draft).total;
+    await addJobLog(draft.jobId, `Presupuesto agregado: ${draft.title} por ${fmtMoney(total)}`);
+  }
+};
+
+window.ghSendBudgetWhatsapp = function(id){
+  const b = state.budgets.find(x=>x.id===id);
+  if(!b) return;
+  window.open(waLink(b.phone, budgetWaMessage(b)), '_blank');
+};
+
+window.ghSendJobExpedienteWhatsapp = function(id){
+  const j = state.jobs.find(x=>x.id===id);
+  if(!j) return;
+  const relBudgets = state.budgets.filter(b=>b.jobId===j.id);
+  const relAppts = state.appointments.filter(a=>a.jobId===j.id && daysUntil(a.date)>=0).sort((a,b)=>a.date.localeCompare(b.date));
+  const total = relBudgets.reduce((s,b)=>s+budgetTotal(b).total,0);
+  let msg = `📁 Expediente GABA Home\n\n`;
+  msg += `*${j.title}*\n`;
+  msg += `Cliente: ${j.client||'—'}\n`;
+  msg += `Tipo: ${TYPES.find(t=>t.id===j.type)?.label||'Otro'}\n`;
+  msg += `Estado: ${STATUS[j.status]} · Avance: ${j.progress||0}%\n`;
+  if(j.dueDate) msg += `Entrega: ${fmtDate(j.dueDate)}\n`;
+  if(relBudgets.length) msg += `\n💰 Presupuesto total: ${fmtMoney(total)}\n`;
+  if(relAppts.length) msg += `\n📅 Próxima cita: ${fmtDate(relAppts[0].date)}${relAppts[0].time?` ${relAppts[0].time} hrs`:''}\n`;
+  window.open(waLink(j.clientPhone || (relAppts[0]&&relAppts[0].phone) || '', msg), '_blank');
+};
+
+window.ghOpenNewClient = function(presetName){ state.modal='client'; state.editingId=null; state.draft={name:presetName||''}; render(); };
+window.ghEditClient = function(id){ const c = state.clients.find(x=>x.id===id); state.modal='client'; state.editingId=id; state.draft={...c}; render(); };
+window.ghDeleteClient = async function(id){ state.clients = state.clients.filter(c=>c.id!==id); render(); await saveKey('clients', state.clients); };
+window.ghSaveClient = async function(){
+  const draft = {
+    name: document.getElementById('f-name').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    notes: document.getElementById('f-notes').value.trim()
+  };
+  if(!draft.name){ return; }
+  if(state.editingId){
+    state.clients = state.clients.map(c=>c.id===state.editingId?{...c,...draft}:c);
+  }else{
+    state.clients.push({id:uid(), createdAt:Date.now(), ...draft});
+  }
+  state.modal=null; state.selectedClientName = draft.name; render();
+  await saveKey('clients', state.clients);
+};
+window.ghOpenClientDetail = function(id){ const c = state.clients.find(x=>x.id===id); if(!c) return; state.view='clientDetail'; state.selectedClientName = c.name; render(); };
+window.ghOpenNewClientFromDetail = function(){ state.modal='client'; state.editingId=null; state.draft={name:state.selectedClientName||''}; render(); };
+
+window.ghOpenNewTask = function(presetJobId){ state.modal='task'; state.editingId=null; state.draft={jobId:presetJobId||''}; render(); };
+window.ghDeleteTask = async function(id){ state.tasks = state.tasks.filter(t=>t.id!==id); render(); await saveKey('tasks', state.tasks); };
+window.ghToggleTask = async function(id){
+  state.tasks = state.tasks.map(t=>t.id===id?{...t, done:!t.done}:t);
+  render();
+  await saveKey('tasks', state.tasks);
+};
+window.ghSaveTask = async function(){
+  const draft = {
+    title: document.getElementById('f-title').value.trim() || 'Sin título',
+    assignedTo: document.getElementById('f-assigned').value,
+    dueDate: document.getElementById('f-due').value,
+    jobId: document.getElementById('f-job').value,
+    done:false
+  };
+  state.tasks.push({id:uid(), createdAt:Date.now(), ...draft});
+  state.modal=null; render();
+  await saveKey('tasks', state.tasks);
+};
+
+window.ghOpenNewPayment = function(budgetId){ state.modal='payment'; state.paymentTargetId=budgetId; state.draft={date:todayStr()}; render(); };
+window.ghSavePayment = async function(){
+  const amount = Number(document.getElementById('f-amount').value)||0;
+  const date = document.getElementById('f-pdate').value || todayStr();
+  if(amount<=0){ state.modal=null; render(); return; }
+  const budget = state.budgets.find(b=>b.id===state.paymentTargetId);
+  if(budget){
+    budget.payments = budget.payments || [];
+    budget.payments.push({id:uid(), amount, date});
+  }
+  state.modal=null; render();
+  await saveKey('budgets', state.budgets);
+  if(budget && budget.jobId) await addJobLog(budget.jobId, `Pago registrado: ${fmtMoney(amount)} en presupuesto "${budget.title}"`);
+};
+window.ghDeletePayment = async function(budgetId, paymentId){
+  const budget = state.budgets.find(b=>b.id===budgetId);
+  if(budget) budget.payments = (budget.payments||[]).filter(p=>p.id!==paymentId);
+  render();
+  await saveKey('budgets', state.budgets);
+};
+
+window.ghToggleChecklistItem = async function(jobId, itemId){
+  const job = state.jobs.find(j=>j.id===jobId);
+  if(!job) return;
+  job.checklist = (job.checklist||[]).map(c=>c.id===itemId?{...c, done:!c.done}:c);
+  render();
+  await saveKey('jobs', state.jobs);
+};
+window.ghRemoveChecklistItem = async function(jobId, itemId){
+  const job = state.jobs.find(j=>j.id===jobId);
+  if(!job) return;
+  job.checklist = (job.checklist||[]).filter(c=>c.id!==itemId);
+  render();
+  await saveKey('jobs', state.jobs);
+};
+window.ghAddChecklistItem = async function(jobId){
+  const input = document.getElementById('gh-check-input');
+  const label = input.value.trim();
+  if(!label) return;
+  const job = state.jobs.find(j=>j.id===jobId);
+  if(!job) return;
+  job.checklist = job.checklist || [];
+  job.checklist.push({id:uid(), label, done:false});
+  render();
+  await saveKey('jobs', state.jobs);
+};
+
+window.ghAddManualJobLog = async function(jobId){
+  const input = document.getElementById('gh-log-input');
+  const text = input.value.trim();
+  if(!text) return;
+  await addJobLog(jobId, text);
+  render();
+};
+
+window.ghPrintBudget = function(id){
+  const b = state.budgets.find(x=>x.id===id);
+  if(!b) return;
+  printBudget(b);
+};
+
+window.ghCloseModal = function(){ state.modal=null; state.editingId=null; render(); };
+window.ghCloseModalBg = function(e){ if(e.target.classList.contains('gh-overlay')) window.ghCloseModal(); };
+
+init();
+})();
+</script>
