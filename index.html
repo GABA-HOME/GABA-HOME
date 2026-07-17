@@ -418,17 +418,37 @@ let fbHadError = false;
 let pendingSaves = {};
 let isOffline = false;
 
+function cacheGet(key){
+  try{ const raw = localStorage.getItem('gabahome_cache_'+key); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
+}
+function cacheSet(key, value){
+  try{ localStorage.setItem('gabahome_cache_'+key, JSON.stringify(value)); }
+  catch(e){ /* no disponible en este entorno, se ignora */ }
+}
+let usingCachedData = false;
+
 async function loadKey(key){
   try{
     const res = await fetch(fbUrl(key));
-    if(res.status===404) return [];
+    if(res.status===404){ cacheSet(key, []); return []; }
     if(!res.ok){ console.error('Firestore GET falló', key, res.status, await res.text()); fbHadError = true; return []; }
     const data = await res.json();
     const str = data.fields && data.fields.value && data.fields.value.stringValue;
-    return str ? JSON.parse(str) : [];
-  }catch(e){ console.error('loadKey error', key, e); isOffline = true; return []; }
+    const value = str ? JSON.parse(str) : [];
+    cacheSet(key, value);
+    isOffline = false; usingCachedData = false;
+    return value;
+  }catch(e){
+    console.error('loadKey error (sin conexión, usando copia local)', key, e);
+    isOffline = true;
+    const cached = cacheGet(key);
+    if(cached !== null){ usingCachedData = true; return cached; }
+    return [];
+  }
 }
 async function saveKey(key, arr){
+  cacheSet(key, arr);
   try{
     const body = { fields: { value: { stringValue: JSON.stringify(arr) }, updatedAt: { timestampValue: new Date().toISOString() } } };
     const res = await fetch(fbUrl(key), {
@@ -455,7 +475,13 @@ async function flushPendingSaves(){
   render();
 }
 window.addEventListener('online', flushPendingSaves);
-window.ghRetrySave = function(){ flushPendingSaves(); };
+window.ghRetrySave = async function(){
+  if(usingCachedData){
+    const [jobs, appointments, team, budgets, clients, tasks] = await Promise.all([loadKey('jobs'), loadKey('appointments'), loadKey('team'), loadKey('budgets'), loadKey('clients'), loadKey('tasks')]);
+    if(!isOffline){ state.jobs=jobs; state.appointments=appointments; state.team=team; state.budgets=budgets; state.clients=clients; state.tasks=tasks; usingCachedData=false; }
+  }
+  await flushPendingSaves();
+};
 
 async function init(){
   const [jobs, appointments, team, budgets, clients, tasks] = await Promise.all([loadKey('jobs'), loadKey('appointments'), loadKey('team'), loadKey('budgets'), loadKey('clients'), loadKey('tasks')]);
@@ -674,6 +700,61 @@ function downloadICS(filename, content){
   URL.revokeObjectURL(url);
 }
 
+function parseQuickApptText(text){
+  const t = (text||'').toLowerCase();
+  const today = new Date(todayStr()+'T00:00:00');
+  let date = null, time = null;
+
+  // fecha dd/mm o dd-mm
+  const dm = t.match(/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/);
+  if(dm){
+    const day = parseInt(dm[1],10), month = parseInt(dm[2],10);
+    let year = dm[3] ? parseInt(dm[3],10) : today.getFullYear();
+    if(year<100) year += 2000;
+    if(day>=1&&day<=31&&month>=1&&month<=12){
+      date = `${year}-${month.toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}`;
+    }
+  }
+  if(!date){
+    if(/\bhoy\b/.test(t)) date = todayStr();
+    else if(/\bma[ñn]ana\b/.test(t)){
+      const d = new Date(today); d.setDate(d.getDate()+1);
+      date = d.toISOString().slice(0,10);
+    }else{
+      const days = ['domingo','lunes','martes','miércoles','miercoles','jueves','viernes','sábado','sabado'];
+      const dayIndexMap = {domingo:0,lunes:1,martes:2,'miércoles':3,miercoles:3,jueves:4,viernes:5,'sábado':6,sabado:6};
+      for(const dname of days){
+        if(t.includes(dname)){
+          const target = dayIndexMap[dname];
+          const d = new Date(today);
+          let diff = (target - d.getDay() + 7) % 7;
+          if(diff===0) diff = 7;
+          d.setDate(d.getDate()+diff);
+          date = d.toISOString().slice(0,10);
+          break;
+        }
+      }
+    }
+  }
+
+  // hora hh:mm o "a las X" o "Xpm/am"
+  const hm = t.match(/\b(\d{1,2}):(\d{2})\s*(am|pm|hrs?)?\b/);
+  const hOnly = t.match(/\b(?:a las\s*)?(\d{1,2})\s*(am|pm)\b/);
+  if(hm){
+    let hh = parseInt(hm[1],10); const mm = hm[2]; const ampm = hm[3];
+    if(ampm==='pm' && hh<12) hh += 12;
+    if(ampm==='am' && hh===12) hh = 0;
+    time = `${hh.toString().padStart(2,'0')}:${mm}`;
+  }else if(hOnly){
+    let hh = parseInt(hOnly[1],10); const ampm = hOnly[2];
+    if(ampm==='pm' && hh<12) hh += 12;
+    if(ampm==='am' && hh===12) hh = 0;
+    time = `${hh.toString().padStart(2,'0')}:00`;
+  }
+
+  return {date, time};
+}
+
 /* ---------------- RENDER ---------------- */
 function render(){
   const root = document.getElementById('gaba-root');
@@ -684,7 +765,7 @@ function render(){
   root.innerHTML = `
     ${sidebar()}
     <div class="gh-main">
-      ${isOffline ? `<div style="background:#F3E7D0;color:#8A5D18;border:1.4px solid #E0CBA0;border-radius:8px;padding:10px 14px;font-size:calc(12.5px * var(--fs-mult,1));margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><span>📴 Sin conexión — sigue trabajando, tus cambios se guardarán solos en cuanto vuelva la señal.</span><button class="gh-btn secondary small" onclick="ghRetrySave()">Reintentar ahora</button></div>` : ''}
+      ${isOffline ? `<div style="background:#F3E7D0;color:#8A5D18;border:1.4px solid #E0CBA0;border-radius:8px;padding:10px 14px;font-size:calc(12.5px * var(--fs-mult,1));margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><span>📴 Sin conexión — ${usingCachedData ? 'estás viendo la última copia guardada en este teléfono. Puedes seguir viendo todo, pero lo que agregues se guardará hasta que vuelva la señal.' : 'sigue trabajando, tus cambios se guardarán solos en cuanto vuelva la señal.'}</span><button class="gh-btn secondary small" onclick="ghRetrySave()">Reintentar ahora</button></div>` : ''}
       ${(fbHadError && !isOffline) ? `<div style="background:#F1DFD5;color:#A64B2A;border:1.4px solid #E0BBA6;border-radius:8px;padding:10px 14px;font-size:calc(12.5px * var(--fs-mult,1));margin-bottom:16px;">⚠ No se pudo conectar con Firebase. Revisa las reglas de seguridad de Firestore o la consola del navegador (F12). Mientras tanto, tus cambios podrían no estar guardándose.</div>` : ''}
       ${searchBar()}
       ${state.searchQuery.trim() ? searchResultsView() : `
@@ -1020,8 +1101,9 @@ function viewAppts(){
       <h1 class="gh-title">Citas</h1>
       <div class="gh-subtitle">${state.appointments.length} registradas</div>
     </div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="gh-btn secondary" onclick="ghDownloadAllAppts()">📅 Exportar a calendario</button>
+      <button class="gh-btn secondary" onclick="ghOpenQuickAppt()">💬 Cita rápida (pegar WhatsApp)</button>
       <button class="gh-btn" onclick="ghOpenNewAppt()">${iconPlus()} Nueva cita</button>
     </div>
   </div>
@@ -1091,6 +1173,21 @@ function viewClientDetail(){
     <div class="gh-stat"><div class="gh-stat-num">${jobs.length}</div><div class="gh-stat-label">Trabajos</div></div>
     <div class="gh-stat"><div class="gh-stat-num">${fmtMoney(totalFacturado)}</div><div class="gh-stat-label">Total presupuestado</div></div>
     <div class="gh-stat"><div class="gh-stat-num">${fmtMoney(totalPagado)}</div><div class="gh-stat-label">Total pagado</div></div>
+  </div>
+
+  <div class="gh-section">
+    <div class="gh-section-title" style="margin-bottom:10px;">Notas / Bitácora del cliente</div>
+    ${client ? `
+    <div class="gh-job" style="margin-bottom:10px;">
+      <div style="display:flex; gap:8px;">
+        <textarea class="gh-textarea" id="gh-client-log-input" placeholder="Pega o escribe lo que te dijo el cliente por WhatsApp..." style="flex:1;"></textarea>
+      </div>
+      <div style="margin-top:8px;"><button class="gh-btn secondary small" onclick="ghAddClientLog('${client.id}')">${iconPlus()} Agregar a la bitácora</button></div>
+    </div>
+    ${(client.log&&client.log.length) ? `<div class="gh-job">
+      ${client.log.slice().sort((a,b)=>b.ts-a.ts).map(l=>`<div class="gh-log-entry"><span class="gh-log-time">${fmtDateTime(l.ts)}</span><span>${escapeHtml(l.text)}</span></div>`).join('')}
+    </div>` : emptyState('Sin notas todavía.')}
+    ` : emptyState('Guarda primero a este cliente en tu directorio para poder llevarle una bitácora.')}
   </div>
 
   <div class="gh-section">
@@ -1259,7 +1356,9 @@ function budgetCard(b){
     <div style="margin-top:4px;">
       ${(b.items||[]).map(it=>`<div style="display:flex;justify-content:space-between;font-size:calc(12.5px * var(--fs-mult,1));color:var(--ink-soft);padding:3px 0;"><span>${escapeHtml(it.concept)}</span><span style="font-family:'IBM Plex Mono',monospace">${fmtMoney(it.amount)}</span></div>`).join('')}
     </div>
-    <div class="gh-budget-total"><span class="label">Total${b.iva?' (IVA incluido)':''}</span><span class="value">${fmtMoney(t.total)}</span></div>
+    ${b.iva?`<div style="display:flex;justify-content:space-between;font-size:calc(12px * var(--fs-mult,1));color:var(--ink-soft);padding:4px 0;border-top:1px dashed var(--border);margin-top:4px;"><span>Subtotal (sin IVA)</span><span>${fmtMoney(t.sub)}</span></div><div style="display:flex;justify-content:space-between;font-size:calc(12px * var(--fs-mult,1));color:var(--ink-soft);padding:2px 0;"><span>IVA (16%)</span><span>${fmtMoney(t.iva)}</span></div>`:''}
+    <div class="gh-budget-total"><span class="label">Total${b.iva?' (con IVA)':''}</span><span class="value">${fmtMoney(t.total)}</span></div>
+    ${!b.iva?`<div style="font-size:calc(11px * var(--fs-mult,1));color:var(--ink-soft);margin-top:2px;">No incluye IVA</div>`:''}
     ${(b.payments&&b.payments.length)?`
     <div style="margin-top:6px;">
       ${b.payments.map(p=>`<div class="gh-payment-row"><span>Pago ${fmtDate(p.date)}</span><span style="display:flex;align-items:center;gap:6px;">${fmtMoney(p.amount)} <button class="gh-item-remove" onclick="ghDeletePayment('${b.id}','${p.id}')" title="Eliminar pago">×</button></span></div>`).join('')}
@@ -1289,6 +1388,7 @@ function modal(){
   if(state.modal==='client') return modalClient();
   if(state.modal==='task') return modalTask();
   if(state.modal==='payment') return modalPayment();
+  if(state.modal==='quickappt') return modalQuickAppt();
   return '';
 }
 
@@ -1497,6 +1597,23 @@ function modalPayment(){
   </div>`;
 }
 
+function modalQuickAppt(){
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">Cita rápida desde WhatsApp</div>
+    <p style="font-size:calc(12.5px * var(--fs-mult,1));color:var(--ink-soft);margin-top:-6px;">Pega el mensaje tal cual te llegó. Si menciona una fecha u hora, se prellenan solas — tú completas el resto.</p>
+    <div class="gh-field">
+      <textarea class="gh-textarea" id="gh-quickappt-text" style="min-height:110px;" placeholder="Ej. Hola, ¿podríamos vernos el jueves a las 4pm en la casa de la Col. Centro?"></textarea>
+    </div>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghParseQuickAppt()">Continuar</button>
+    </div>
+  </div>
+  </div>`;
+}
+
 function modalBudget(){
   const d = state.draft;
   const items = d.items || [];
@@ -1629,6 +1746,20 @@ window.ghSaveJob = async function(){
 };
 
 window.ghOpenJobDetail = function(id){ state.view='jobDetail'; state.selectedJobId=id; render(); };
+
+window.ghOpenQuickAppt = function(){ state.modal='quickappt'; render(); };
+window.ghParseQuickAppt = function(){
+  const text = document.getElementById('gh-quickappt-text').value.trim();
+  const parsed = parseQuickApptText(text);
+  state.modal='appt'; state.editingId=null;
+  state.draft = {
+    date: parsed.date || todayStr(),
+    time: parsed.time || '',
+    reminder: '1day',
+    notes: text
+  };
+  render();
+};
 
 window.ghOpenNewAppt = function(presetJobId){ state.modal='appt'; state.editingId=null; state.draft={date:todayStr(), reminder:'1day', jobId:presetJobId||''}; render(); };
 window.ghEditAppt = function(id){ const a = state.appointments.find(x=>x.id===id); state.modal='appt'; state.editingId=id; state.draft={...a}; render(); };
@@ -1849,6 +1980,18 @@ window.ghAddChecklistItem = async function(jobId){
   job.checklist.push({id:uid(), label, done:false});
   render();
   await saveKey('jobs', state.jobs);
+};
+
+window.ghAddClientLog = async function(clientId){
+  const input = document.getElementById('gh-client-log-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const client = state.clients.find(c=>c.id===clientId);
+  if(!client) return;
+  client.log = client.log || [];
+  client.log.push({id:uid(), ts:Date.now(), text});
+  render();
+  await saveKey('clients', state.clients);
 };
 
 window.ghAddManualJobLog = async function(jobId){
