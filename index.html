@@ -24,6 +24,7 @@
 *{box-sizing:border-box;}
 body{margin:0;padding:0;}
 #gaba-root{
+  --fs-mult:1;
   font-family:'Inter',sans-serif;
   color:var(--ink);
   background:
@@ -55,14 +56,14 @@ body{margin:0;padding:0;}
 }
 .gh-logo{display:flex; align-items:center; gap:9px;}
 .gh-logo svg{flex-shrink:0;}
-.gh-logo-text{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; letter-spacing:0.5px; line-height:1.15;}
-.gh-logo-text span{display:block; font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:9.5px; color:#8FB4C2; letter-spacing:1.5px; margin-top:2px;}
+.gh-logo-text{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:calc(15px * var(--fs-mult,1)); letter-spacing:0.5px; line-height:1.15;}
+.gh-logo-text span{display:block; font-family:'IBM Plex Mono',monospace; font-weight:500; font-size:calc(9.5px * var(--fs-mult,1)); color:#8FB4C2; letter-spacing:1.5px; margin-top:2px;}
 
 .gh-nav{display:flex; flex-direction:column; gap:3px;}
 .gh-nav-item{
   display:flex; align-items:center; gap:9px;
   padding:9px 10px; border-radius:7px;
-  font-size:13px; font-weight:500; color:#C7D0CC;
+  font-size:calc(13px * var(--fs-mult,1)); font-weight:500; color:#C7D0CC;
   cursor:pointer; border:none; background:transparent; text-align:left; width:100%;
   font-family:'Inter',sans-serif;
   transition:background .12s ease, color .12s ease;
@@ -71,23 +72,23 @@ body{margin:0;padding:0;}
 .gh-nav-item.active{background:var(--blue); color:#fff;}
 .gh-nav-item svg{flex-shrink:0; opacity:.9;}
 
-.gh-sidebar-foot{margin-top:auto; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#6E8790; line-height:1.5;}
+.gh-sidebar-foot{margin-top:auto; font-family:'IBM Plex Mono',monospace; font-size:calc(10px * var(--fs-mult,1)); color:#6E8790; line-height:1.5;}
 
 /* ---------- Main ---------- */
 .gh-main{flex:1; padding:26px 30px; overflow-y:auto; max-height:900px;}
 .gh-topbar{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:22px;}
-.gh-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px; margin:0;}
-.gh-subtitle{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft); margin-top:4px; text-transform:uppercase; letter-spacing:.5px;}
+.gh-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:calc(22px * var(--fs-mult,1)); margin:0;}
+.gh-subtitle{font-family:'IBM Plex Mono',monospace; font-size:calc(11.5px * var(--fs-mult,1)); color:var(--ink-soft); margin-top:4px; text-transform:uppercase; letter-spacing:.5px;}
 
 .gh-btn{
-  font-family:'Inter',sans-serif; font-weight:600; font-size:13px;
+  font-family:'Inter',sans-serif; font-weight:600; font-size:calc(13px * var(--fs-mult,1));
   background:var(--brick); color:#fff; border:none; border-radius:7px;
   padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
   transition:filter .12s ease;
 }
 .gh-btn:hover{filter:brightness(1.08);}
 .gh-btn.secondary{background:transparent; color:var(--ink); border:1.4px solid var(--border);}
-.gh-btn.small{padding:5px 10px; font-size:11.5px; border-radius:6px;}
+.gh-btn.small{padding:5px 10px; font-size:calc(11.5px * var(--fs-mult,1)); border-radius:6px;}
 .gh-btn.ghost{background:transparent; color:var(--ink-soft); padding:5px 8px;}
 
 /* Stat cards */
@@ -96,22 +97,22 @@ body{margin:0;padding:0;}
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
   padding:16px 16px 14px; position:relative;
 }
-.gh-stat-num{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:28px; line-height:1;}
-.gh-stat-label{font-size:11.5px; color:var(--ink-soft); margin-top:6px; font-weight:500;}
+.gh-stat-num{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:calc(28px * var(--fs-mult,1)); line-height:1;}
+.gh-stat-label{font-size:calc(11.5px * var(--fs-mult,1)); color:var(--ink-soft); margin-top:6px; font-weight:500;}
 .gh-stat-pin{
   position:absolute; top:12px; right:12px; width:20px; height:20px; border-radius:50%;
   border:1.6px solid var(--ink-soft); display:flex; align-items:center; justify-content:center;
-  font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--ink-soft);
+  font-family:'IBM Plex Mono',monospace; font-size:calc(9px * var(--fs-mult,1)); color:var(--ink-soft);
 }
 
 .gh-section{margin-bottom:28px;}
 .gh-section-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
-.gh-section-title{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15.5px;}
+.gh-section-title{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:calc(15.5px * var(--fs-mult,1));}
 
 /* Stamp signature */
 .gh-stamp{
   display:inline-block; padding:3px 11px; border:2.5px double currentColor; border-radius:5px;
-  font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:10px; letter-spacing:1px;
+  font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:calc(10px * var(--fs-mult,1)); letter-spacing:1px;
   text-transform:uppercase; white-space:nowrap;
 }
 .gh-stamp.pendiente{color:var(--ochre); transform:rotate(-4deg);}
@@ -121,7 +122,7 @@ body{margin:0;padding:0;}
 .gh-stamp.terminado{color:var(--moss); transform:rotate(-5deg);}
 
 .gh-tag{
-  display:inline-block; font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:20px;
+  display:inline-block; font-size:calc(10.5px * var(--fs-mult,1)); font-weight:600; padding:3px 9px; border-radius:20px;
   font-family:'IBM Plex Mono',monospace; letter-spacing:.3px;
 }
 
@@ -131,11 +132,11 @@ body{margin:0;padding:0;}
   padding:15px 16px; margin-bottom:10px; display:flex; flex-direction:column; gap:9px;
 }
 .gh-job-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
-.gh-job-title{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px;}
-.gh-job-meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+.gh-job-title{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:calc(15px * var(--fs-mult,1));}
+.gh-job-meta{font-size:calc(12px * var(--fs-mult,1)); color:var(--ink-soft); margin-top:2px;}
 .gh-progress-track{background:var(--border); height:6px; border-radius:4px; overflow:hidden;}
 .gh-progress-fill{height:100%; background:var(--blue); border-radius:4px;}
-.gh-job-foot{display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--ink-soft);}
+.gh-job-foot{display:flex; justify-content:space-between; align-items:center; font-size:calc(11.5px * var(--fs-mult,1)); color:var(--ink-soft);}
 .gh-job-actions{display:flex; gap:6px;}
 
 /* Appointment row */
@@ -144,51 +145,51 @@ body{margin:0;padding:0;}
   padding:12px 16px; display:flex; align-items:center; gap:14px; margin-bottom:9px;
 }
 .gh-appt-date{
-  font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:12px; text-align:center;
+  font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:calc(12px * var(--fs-mult,1)); text-align:center;
   background:var(--blue-soft); color:var(--blue); border-radius:7px; padding:6px 10px; min-width:56px;
 }
 .gh-appt-badge{
-  font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; padding:2px 8px;
+  font-family:'IBM Plex Mono',monospace; font-size:calc(10px * var(--fs-mult,1)); font-weight:600; padding:2px 8px;
   border-radius:20px; text-transform:uppercase; letter-spacing:.4px;
 }
 .gh-appt-body{flex:1;}
-.gh-appt-title{font-weight:600; font-size:13.5px;}
-.gh-appt-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+.gh-appt-title{font-weight:600; font-size:calc(13.5px * var(--fs-mult,1));}
+.gh-appt-meta{font-size:calc(11.5px * var(--fs-mult,1)); color:var(--ink-soft); margin-top:2px;}
 
 .gh-empty{
   border:1.5px dashed var(--border); border-radius:var(--radius); padding:26px; text-align:center;
-  color:var(--ink-soft); font-size:13px;
+  color:var(--ink-soft); font-size:calc(13px * var(--fs-mult,1));
 }
 
 .gh-filters{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
 .gh-chip{
-  font-size:12px; font-weight:500; padding:5px 12px; border-radius:20px; border:1.4px solid var(--border);
+  font-size:calc(12px * var(--fs-mult,1)); font-weight:500; padding:5px 12px; border-radius:20px; border:1.4px solid var(--border);
   background:transparent; cursor:pointer; color:var(--ink-soft); font-family:'Inter',sans-serif;
 }
 .gh-chip.active{background:var(--ink); color:#fff; border-color:var(--ink);}
 
 .gh-wa-btn{
   background:#EAF5EE; color:#2E7D4F; border:1px solid #C9E6D3;
-  font-family:'Inter',sans-serif; font-weight:600; font-size:11.5px; border-radius:6px;
+  font-family:'Inter',sans-serif; font-weight:600; font-size:calc(11.5px * var(--fs-mult,1)); border-radius:6px;
   padding:5px 10px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;
 }
 .gh-wa-btn:hover{filter:brightness(0.97);}
 
 /* Budget items table */
 .gh-item-row{display:grid; grid-template-columns:1fr 90px 30px; gap:8px; margin-bottom:7px; align-items:center;}
-.gh-item-remove{background:transparent; border:none; color:var(--brick); cursor:pointer; font-size:16px; line-height:1;}
+.gh-item-remove{background:transparent; border:none; color:var(--brick); cursor:pointer; font-size:calc(16px * var(--fs-mult,1)); line-height:1;}
 .gh-budget-total{
   display:flex; justify-content:space-between; align-items:center; padding-top:10px; margin-top:6px;
   border-top:1.4px dashed var(--border); font-family:'IBM Plex Mono',monospace;
 }
-.gh-budget-total .label{color:var(--ink-soft); font-size:12px;}
-.gh-budget-total .value{font-weight:700; font-size:16px; color:var(--ink);}
+.gh-budget-total .label{color:var(--ink-soft); font-size:calc(12px * var(--fs-mult,1));}
+.gh-budget-total .value{font-weight:700; font-size:calc(16px * var(--fs-mult,1)); color:var(--ink);}
 .gh-budget-card{
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
   padding:15px 16px; margin-bottom:10px;
 }
 .gh-budget-status{
-  font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; padding:3px 9px;
+  font-family:'IBM Plex Mono',monospace; font-size:calc(10px * var(--fs-mult,1)); font-weight:600; padding:3px 9px;
   border-radius:20px; text-transform:uppercase; letter-spacing:.4px;
 }
 
@@ -200,7 +201,7 @@ body{margin:0;padding:0;}
 .gh-avatar{
   width:38px; height:38px; border-radius:50%; background:var(--blue-soft); color:var(--blue);
   display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif;
-  font-weight:700; font-size:14px; flex-shrink:0;
+  font-weight:700; font-size:calc(14px * var(--fs-mult,1)); flex-shrink:0;
 }
 
 /* Modal */
@@ -212,26 +213,42 @@ body{margin:0;padding:0;}
   background:var(--card); border-radius:14px; padding:24px 26px; width:420px; max-width:100%;
   max-height:85vh; overflow-y:auto; border:1px solid var(--border);
 }
-.gh-modal-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:17px; margin-bottom:16px;}
+.gh-modal-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:calc(17px * var(--fs-mult,1)); margin-bottom:16px;}
 .gh-field{margin-bottom:13px;}
-.gh-label{font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; display:block;}
+.gh-label{font-size:calc(12px * var(--fs-mult,1)); font-weight:600; color:var(--ink-soft); margin-bottom:5px; display:block;}
 .gh-input, .gh-select, .gh-textarea{
   width:100%; padding:9px 10px; border-radius:7px; border:1.4px solid var(--border);
-  font-family:'Inter',sans-serif; font-size:13px; background:#fff; color:var(--ink);
+  font-family:'Inter',sans-serif; font-size:calc(13px * var(--fs-mult,1)); background:#fff; color:var(--ink);
 }
 .gh-textarea{resize:vertical; min-height:56px;}
 .gh-row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
 .gh-modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
-.gh-range-val{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--blue); font-weight:600;}
+.gh-range-val{font-family:'IBM Plex Mono',monospace; font-size:calc(12px * var(--fs-mult,1)); color:var(--blue); font-weight:600;}
 
 @media (max-width:720px){
-  #gaba-root{flex-direction:column;}
-  .gh-sidebar{width:100%; flex-direction:row; align-items:center; padding:14px 16px; gap:14px; overflow-x:auto;}
-  .gh-nav{flex-direction:row;}
+  #gaba-root{flex-direction:column; --fs-mult:1.2; border-radius:0; min-height:100vh;}
+  .gh-sidebar{width:100%; flex-direction:row; align-items:center; padding:12px 14px; gap:10px; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .gh-nav{flex-direction:row; gap:5px;}
+  .gh-nav-item{white-space:nowrap; padding:11px 13px; min-height:42px;}
   .gh-sidebar-foot{display:none;}
-  .gh-stats{grid-template-columns:repeat(2,1fr);}
-  .gh-main{padding:18px;}
+  .gh-stats{grid-template-columns:repeat(2,1fr); gap:10px;}
+  .gh-main{padding:16px 14px 90px;}
   .gh-row2{grid-template-columns:1fr;}
+  .gh-topbar{flex-direction:column; align-items:stretch; gap:12px;}
+  .gh-topbar > div:last-child{display:flex; gap:8px;}
+  .gh-topbar > div:last-child .gh-btn{flex:1; justify-content:center;}
+  .gh-btn{min-height:44px; padding:11px 16px;}
+  .gh-btn.small{min-height:38px;}
+  .gh-wa-btn{min-height:40px; padding:9px 13px;}
+  .gh-input, .gh-select, .gh-textarea{font-size:16px !important; padding:12px;}
+  .gh-search-input{font-size:16px !important; padding:13px 14px 13px 40px;}
+  .gh-checkbox{width:22px; height:22px;}
+  .gh-modal{width:100%; max-width:100%; padding:20px; border-radius:14px 14px 0 0; position:fixed; left:0; right:0; bottom:0; max-height:90vh;}
+  .gh-overlay{align-items:flex-end; padding:0;}
+  .gh-job-actions{flex-wrap:wrap; gap:6px;}
+  .gh-job-foot{flex-direction:column; align-items:flex-start; gap:8px;}
+  .gh-appt{flex-wrap:wrap;}
+  .gh-appt-body{min-width:140px;}
 }
 
 /* Tasks */
@@ -241,9 +258,9 @@ body{margin:0;padding:0;}
 }
 .gh-task-row.done{opacity:.55;}
 .gh-checkbox{width:19px; height:19px; accent-color:var(--moss); cursor:pointer; flex-shrink:0;}
-.gh-task-title{font-weight:600; font-size:13.5px;}
+.gh-task-title{font-weight:600; font-size:calc(13.5px * var(--fs-mult,1));}
 .gh-task-title.done{text-decoration:line-through;}
-.gh-task-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+.gh-task-meta{font-size:calc(11.5px * var(--fs-mult,1)); color:var(--ink-soft); margin-top:2px;}
 
 /* Client cards */
 .gh-client-card{
@@ -252,13 +269,13 @@ body{margin:0;padding:0;}
 }
 
 /* Payments */
-.gh-payment-row{display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:4px 0; color:var(--ink-soft);}
-.gh-paid-line{display:flex; justify-content:space-between; font-size:12.5px; padding-top:6px; margin-top:4px; border-top:1px dashed var(--border);}
+.gh-payment-row{display:flex; justify-content:space-between; align-items:center; font-size:calc(12px * var(--fs-mult,1)); padding:4px 0; color:var(--ink-soft);}
+.gh-paid-line{display:flex; justify-content:space-between; font-size:calc(12.5px * var(--fs-mult,1)); padding-top:6px; margin-top:4px; border-top:1px dashed var(--border);}
 
 /* Bitácora */
-.gh-log-entry{display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12.5px;}
+.gh-log-entry{display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:calc(12.5px * var(--fs-mult,1));}
 .gh-log-entry:last-child{border-bottom:none;}
-.gh-log-time{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); font-size:10.5px; white-space:nowrap; padding-top:1px;}
+.gh-log-time{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); font-size:calc(10.5px * var(--fs-mult,1)); white-space:nowrap; padding-top:1px;}
 
 /* Print */
 #gh-print-area{display:none;}
@@ -266,10 +283,10 @@ body{margin:0;padding:0;}
   #gaba-root{display:none;}
   #gh-print-area{display:block; font-family:'Inter',sans-serif; color:#1B2420; padding:24px;}
   .gh-print-head{display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px double #16232B; padding-bottom:14px; margin-bottom:18px;}
-  .gh-print-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;}
+  .gh-print-title{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:calc(20px * var(--fs-mult,1));}
   .gh-print-table{width:100%; border-collapse:collapse; margin-top:14px;}
-  .gh-print-table th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#5B6660; border-bottom:1.5px solid #DCD4C0; padding:6px 4px;}
-  .gh-print-table td{padding:8px 4px; border-bottom:1px solid #ECE7DA; font-size:13px;}
+  .gh-print-table th{text-align:left; font-size:calc(11px * var(--fs-mult,1)); text-transform:uppercase; letter-spacing:.5px; color:#5B6660; border-bottom:1.5px solid #DCD4C0; padding:6px 4px;}
+  .gh-print-table td{padding:8px 4px; border-bottom:1px solid #ECE7DA; font-size:calc(13px * var(--fs-mult,1));}
   .gh-print-total{display:flex; justify-content:flex-end; gap:30px; margin-top:16px; font-family:'IBM Plex Mono',monospace;}
 }
 
@@ -277,7 +294,7 @@ body{margin:0;padding:0;}
 .gh-search-wrap{position:relative; margin-bottom:20px;}
 .gh-search-input{
   width:100%; padding:11px 14px 11px 38px; border-radius:9px; border:1.4px solid var(--border);
-  font-family:'Inter',sans-serif; font-size:13.5px; background:var(--card); color:var(--ink);
+  font-family:'Inter',sans-serif; font-size:calc(13.5px * var(--fs-mult,1)); background:var(--card); color:var(--ink);
 }
 .gh-search-icon{position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--ink-soft); pointer-events:none;}
 .gh-search-result{
@@ -285,27 +302,27 @@ body{margin:0;padding:0;}
   margin-bottom:7px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;
 }
 .gh-search-result:hover{border-color:var(--blue);}
-.gh-search-kind{font-family:'IBM Plex Mono',monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft);}
+.gh-search-kind{font-family:'IBM Plex Mono',monospace; font-size:calc(9.5px * var(--fs-mult,1)); text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft);}
 
 /* Priority & atraso badges */
 .gh-priority-urgente{
-  font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; color:#fff; background:var(--brick);
+  font-family:'IBM Plex Mono',monospace; font-size:calc(10px * var(--fs-mult,1)); font-weight:700; color:#fff; background:var(--brick);
   padding:2px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.4px;
 }
 .gh-atraso{
-  font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; color:#fff; background:#C0392B;
+  font-family:'IBM Plex Mono',monospace; font-size:calc(10px * var(--fs-mult,1)); font-weight:700; color:#fff; background:#C0392B;
   padding:2px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.4px;
 }
-.gh-folio{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); letter-spacing:.3px;}
-.gh-maps-link{font-size:11.5px; color:var(--blue); text-decoration:none; display:inline-flex; align-items:center; gap:4px;}
+.gh-folio{font-family:'IBM Plex Mono',monospace; font-size:calc(10.5px * var(--fs-mult,1)); color:var(--ink-soft); letter-spacing:.3px;}
+.gh-maps-link{font-size:calc(11.5px * var(--fs-mult,1)); color:var(--blue); text-decoration:none; display:inline-flex; align-items:center; gap:4px;}
 .gh-maps-link:hover{text-decoration:underline;}
 
 /* Checklist */
-.gh-check-item{display:flex; align-items:center; gap:9px; padding:5px 0; font-size:13px;}
+.gh-check-item{display:flex; align-items:center; gap:9px; padding:5px 0; font-size:calc(13px * var(--fs-mult,1));}
 .gh-check-item.done{color:var(--ink-soft); text-decoration:line-through;}
 
 /* Reports */
-.gh-report-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;}
+.gh-report-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:calc(13px * var(--fs-mult,1));}
 .gh-report-row:last-child{border-bottom:none;}
 </style>
 
@@ -487,16 +504,16 @@ function printBudget(b){
     <div class="gh-print-head">
       <div>
         <div class="gh-print-title">GABA HOME</div>
-        <div style="font-size:11px;color:#5B6660;letter-spacing:.5px;text-transform:uppercase;">Arquitectura · Ingeniería · Topografía</div>
+        <div style="font-size:calc(11px * var(--fs-mult,1));color:#5B6660;letter-spacing:.5px;text-transform:uppercase;">Arquitectura · Ingeniería · Topografía</div>
       </div>
-      <div style="text-align:right;font-size:12px;">
+      <div style="text-align:right;font-size:calc(12px * var(--fs-mult,1));">
         <div>Presupuesto</div>
         <div style="color:#5B6660;">${fmtDate(todayStr())}</div>
       </div>
     </div>
     <div style="margin-bottom:10px;"><strong>${escapeHtml(b.title)}</strong></div>
-    <div style="font-size:13px;color:#5B6660;margin-bottom:4px;">Cliente: ${escapeHtml(b.client||'—')}</div>
-    ${job?`<div style="font-size:13px;color:#5B6660;">Trabajo relacionado: ${escapeHtml(job.title)}</div>`:''}
+    <div style="font-size:calc(13px * var(--fs-mult,1));color:#5B6660;margin-bottom:4px;">Cliente: ${escapeHtml(b.client||'—')}</div>
+    ${job?`<div style="font-size:calc(13px * var(--fs-mult,1));color:#5B6660;">Trabajo relacionado: ${escapeHtml(job.title)}</div>`:''}
     <table class="gh-print-table">
       <thead><tr><th>Concepto</th><th style="text-align:right;">Monto</th></tr></thead>
       <tbody>
@@ -507,7 +524,7 @@ function printBudget(b){
       <div>
         <div>Subtotal: ${fmtMoney(t.sub)}</div>
         ${b.iva?`<div>IVA (16%): ${fmtMoney(t.iva)}</div>`:''}
-        <div style="font-weight:700;font-size:16px;margin-top:4px;">Total: ${fmtMoney(t.total)}</div>
+        <div style="font-weight:700;font-size:calc(16px * var(--fs-mult,1));margin-top:4px;">Total: ${fmtMoney(t.total)}</div>
       </div>
     </div>
   `;
@@ -610,7 +627,7 @@ function render(){
   root.innerHTML = `
     ${sidebar()}
     <div class="gh-main">
-      ${fbHadError ? `<div style="background:#F1DFD5;color:#A64B2A;border:1.4px solid #E0BBA6;border-radius:8px;padding:10px 14px;font-size:12.5px;margin-bottom:16px;">⚠ No se pudo conectar con Firebase. Revisa las reglas de seguridad de Firestore o la consola del navegador (F12). Mientras tanto, tus cambios podrían no estar guardándose.</div>` : ''}
+      ${fbHadError ? `<div style="background:#F1DFD5;color:#A64B2A;border:1.4px solid #E0BBA6;border-radius:8px;padding:10px 14px;font-size:calc(12.5px * var(--fs-mult,1));margin-bottom:16px;">⚠ No se pudo conectar con Firebase. Revisa las reglas de seguridad de Firestore o la consola del navegador (F12). Mientras tanto, tus cambios podrían no estar guardándose.</div>` : ''}
       ${searchBar()}
       ${state.searchQuery.trim() ? searchResultsView() : `
       ${state.view==='dashboard' ? viewDashboard() : ''}
@@ -642,7 +659,7 @@ function searchResultsView(){
   return `
   <div class="gh-topbar"><div><h1 class="gh-title">Resultados de búsqueda</h1><div class="gh-subtitle">${results.length} encontrados</div></div></div>
   ${results.length===0 ? emptyState('No se encontró nada con ese texto.') :
-    results.map(r=>`<div class="gh-search-result" onclick="ghClearSearchAnd(()=>{${r.action}})"><div><div style="font-weight:600;font-size:13.5px;">${escapeHtml(r.label)}</div><div style="font-size:11.5px;color:var(--ink-soft);">${escapeHtml(r.sub)}</div></div><span class="gh-search-kind">${r.kind}</span></div>`).join('')}
+    results.map(r=>`<div class="gh-search-result" onclick="ghClearSearchAnd(()=>{${r.action}})"><div><div style="font-weight:600;font-size:calc(13.5px * var(--fs-mult,1));">${escapeHtml(r.label)}</div><div style="font-size:calc(11.5px * var(--fs-mult,1));color:var(--ink-soft);">${escapeHtml(r.sub)}</div></div><span class="gh-search-kind">${r.kind}</span></div>`).join('')}
   `;
 }
 
@@ -742,7 +759,7 @@ function apptRow(a){
   const job = state.jobs.find(j=>j.id===a.jobId);
   return `
   <div class="gh-appt">
-    <div class="gh-appt-date">${fmtDate(a.date)}<div style="font-size:10px;color:var(--ink-soft);font-weight:500;margin-top:2px">${a.time||''}</div></div>
+    <div class="gh-appt-date">${fmtDate(a.date)}<div style="font-size:calc(10px * var(--fs-mult,1));color:var(--ink-soft);font-weight:500;margin-top:2px">${a.time||''}</div></div>
     <div class="gh-appt-body">
       <div class="gh-appt-title">${escapeHtml(a.title)}</div>
       <div class="gh-appt-meta">${escapeHtml(a.client||'Sin cliente')}${job?` · ${escapeHtml(job.title)}`:''}${a.location?` · ${escapeHtml(a.location)}`:''}</div>
@@ -856,7 +873,7 @@ function viewJobDetail(){
         <span>${j.progress||0}% completado</span>
         <span>${j.startDate?`Inicio: ${fmtDate(j.startDate)}`:''} ${j.dueDate?`· Entrega: ${fmtDate(j.dueDate)}`:''}</span>
       </div>
-      ${j.notes?`<div style="font-size:13px;color:var(--ink-soft);border-top:1px dashed var(--border);padding-top:9px;">${escapeHtml(j.notes)}</div>`:''}
+      ${j.notes?`<div style="font-size:calc(13px * var(--fs-mult,1));color:var(--ink-soft);border-top:1px dashed var(--border);padding-top:9px;">${escapeHtml(j.notes)}</div>`:''}
     </div>
   </div>
 
@@ -878,7 +895,7 @@ function viewJobDetail(){
           <input type="checkbox" class="gh-checkbox" ${c.done?'checked':''} onchange="ghToggleChecklistItem('${j.id}','${c.id}')">
           <span style="flex:1;">${escapeHtml(c.label)}</span>
           <button class="gh-item-remove" onclick="ghRemoveChecklistItem('${j.id}','${c.id}')" title="Eliminar">×</button>
-        </div>`).join('') : `<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Sin documentos en la lista.</div>`}
+        </div>`).join('') : `<div style="font-size:calc(12.5px * var(--fs-mult,1));color:var(--ink-soft);margin-bottom:8px;">Sin documentos en la lista.</div>`}
       <div style="display:flex;gap:8px;margin-top:10px;">
         <input class="gh-input" id="gh-check-input" placeholder="Agregar documento requerido...">
         <button class="gh-btn secondary small" onclick="ghAddChecklistItem('${j.id}')">${iconPlus()} Agregar</button>
@@ -962,8 +979,8 @@ function viewClients(){
       <div class="gh-client-card">
         <div class="gh-avatar">${(c.name||'?').trim().slice(0,1).toUpperCase()}</div>
         <div style="flex:1;cursor:pointer;" onclick="ghOpenClientDetail('${c.id}')">
-          <div style="font-weight:600;font-size:14px">${escapeHtml(c.name)}</div>
-          <div style="font-size:12px;color:var(--ink-soft)">${escapeHtml(c.phone||'Sin teléfono')}${c.email?` · ${escapeHtml(c.email)}`:''} · ${nJobs} trabajo(s)</div>
+          <div style="font-weight:600;font-size:calc(14px * var(--fs-mult,1))">${escapeHtml(c.name)}</div>
+          <div style="font-size:calc(12px * var(--fs-mult,1));color:var(--ink-soft)">${escapeHtml(c.phone||'Sin teléfono')}${c.email?` · ${escapeHtml(c.email)}`:''} · ${nJobs} trabajo(s)</div>
         </div>
         <button class="gh-btn ghost small" onclick="ghOpenClientDetail('${c.id}')">Ver →</button>
         <button class="gh-btn ghost small" onclick="ghEditClient('${c.id}')">${iconEdit()}</button>
@@ -1127,8 +1144,8 @@ function viewTeam(){
       <div class="gh-team-card">
         <div class="gh-avatar">${(m.name||'?').trim().slice(0,1).toUpperCase()}</div>
         <div style="flex:1">
-          <div style="font-weight:600;font-size:14px">${escapeHtml(m.name)}</div>
-          <div style="font-size:12px;color:var(--ink-soft)">${escapeHtml(m.role)} · ${assigned} trabajo(s) activo(s)</div>
+          <div style="font-weight:600;font-size:calc(14px * var(--fs-mult,1))">${escapeHtml(m.name)}</div>
+          <div style="font-size:calc(12px * var(--fs-mult,1));color:var(--ink-soft)">${escapeHtml(m.role)} · ${assigned} trabajo(s) activo(s)</div>
         </div>
         <button class="gh-btn ghost small" onclick="ghDeleteTeam('${m.id}')">${iconTrash()}</button>
       </div>`;
@@ -1164,7 +1181,7 @@ function budgetCard(b){
       <span class="gh-budget-status" style="background:${sc.bg};color:${sc.fg}">${BUDGET_STATUS[b.status]||'Borrador'}${b.status==='aprobado'&&b.approvedAt?` · ${fmtDate(b.approvedAt)}`:''}</span>
     </div>
     <div style="margin-top:4px;">
-      ${(b.items||[]).map(it=>`<div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);padding:3px 0;"><span>${escapeHtml(it.concept)}</span><span style="font-family:'IBM Plex Mono',monospace">${fmtMoney(it.amount)}</span></div>`).join('')}
+      ${(b.items||[]).map(it=>`<div style="display:flex;justify-content:space-between;font-size:calc(12.5px * var(--fs-mult,1));color:var(--ink-soft);padding:3px 0;"><span>${escapeHtml(it.concept)}</span><span style="font-family:'IBM Plex Mono',monospace">${fmtMoney(it.amount)}</span></div>`).join('')}
     </div>
     <div class="gh-budget-total"><span class="label">Total${b.iva?' (IVA incluido)':''}</span><span class="value">${fmtMoney(t.total)}</span></div>
     ${(b.payments&&b.payments.length)?`
@@ -1407,7 +1424,7 @@ function modalBudget(){
     <button class="gh-btn secondary small" onclick="ghAddBudgetItem()">${iconPlus()} Agregar concepto</button>
 
     <div class="gh-field" style="margin-top:14px;">
-      <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;">
+      <label style="display:flex;align-items:center;gap:7px;font-size:calc(13px * var(--fs-mult,1));font-weight:500;">
         <input type="checkbox" id="f-iva" ${d.iva?'checked':''} onchange="ghToggleIva(this.checked)"> Incluir IVA (16%)
       </label>
     </div>
