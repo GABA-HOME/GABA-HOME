@@ -411,6 +411,8 @@ let state = {
   selectedClientName:null,
   searchQuery:'',
   currentUserId:null,
+  ovoAnswer:null,
+  previewId:null,
   draft:{},
   filterType:'todos', filterStatus:'todos'
 };
@@ -893,36 +895,62 @@ function ovoCard(){
   const upcoming = state.appointments.filter(a=>daysUntil(a.date)>0 && daysUntil(a.date)<=3).sort((a,b)=>a.date.localeCompare(b.date));
   const myTasks = state.currentUserId ? state.tasks.filter(t=>!t.done && t.assignedTo===state.currentUserId) : [];
   const allPending = state.tasks.filter(t=>!t.done).length;
+  const myJobs = state.currentUserId ? state.jobs.filter(j=>(Array.isArray(j.assignedTo)?j.assignedTo.includes(state.currentUserId):j.assignedTo===state.currentUserId) && j.status!=='terminado') : [];
+  const overdueJobs = state.jobs.filter(j=>isOverdue(j));
+  const urgentJobs = state.jobs.filter(j=>j.priority==='super_urgente' && j.status!=='terminado');
+  const pendingBudgets = state.budgets.filter(b=>b.status==='enviado');
+  const unpaidBudgets = state.budgets.filter(b=>budgetTotal(b).balance>0 && (b.status==='aprobado'||b.status==='enviado'));
 
   let apptLine;
   if(todayAppts.length){
-    apptLine = `Hoy tienes ${todayAppts.length} cita${todayAppts.length>1?'s':''}: ` + todayAppts.map(a=>`${escapeHtml(a.title)}${a.time?` (${a.time})`:''}`).join(', ') + '.';
+    apptLine = `📅 Hoy tienes ${todayAppts.length} cita${todayAppts.length>1?'s':''}: ` + todayAppts.map(a=>`${escapeHtml(a.title)}${a.time?` (${a.time})`:''}`).join(', ') + '.';
   }else if(upcoming.length){
     const n = upcoming[0];
     const d = daysUntil(n.date);
-    apptLine = `No tienes citas hoy. Tu próxima es ${d===1?'mañana':`en ${d} días`}: ${escapeHtml(n.title)}.`;
+    apptLine = `📅 No tienes citas hoy. Tu próxima es ${d===1?'mañana':`en ${d} días`}: ${escapeHtml(n.title)}.`;
   }else{
-    apptLine = 'No tienes citas próximas registradas.';
+    apptLine = '📅 No tienes citas próximas registradas.';
   }
 
   let taskLine;
   if(me){
     if(myTasks.length){
-      taskLine = `Estos son tus pendientes, ${escapeHtml(displayName)}: ` + myTasks.slice(0,4).map(t=>escapeHtml(t.title)).join(', ') + (myTasks.length>4?`, y ${myTasks.length-4} más`:'') + '.';
+      taskLine = `✅ Estos son tus pendientes, ${escapeHtml(displayName)}: ` + myTasks.slice(0,4).map(t=>escapeHtml(t.title)).join(', ') + (myTasks.length>4?`, y ${myTasks.length-4} más`:'') + '.';
     }else{
-      taskLine = `No tienes pendientes propios asignados, ${escapeHtml(displayName)}.`;
+      taskLine = `✅ No tienes pendientes propios asignados, ${escapeHtml(displayName)}.`;
     }
   }else{
-    taskLine = `<span class="gh-ovo-link" onclick="ghOpenWhoAmI()">Elige quién eres</span> para que te muestre tus pendientes primero.`;
+    taskLine = `✅ <span class="gh-ovo-link" onclick="ghOpenWhoAmI()">Elige quién eres</span> para que te muestre tus pendientes primero.`;
   }
+
+  let myJobsLine = '';
+  if(me){
+    myJobsLine = myJobs.length
+      ? `🗂️ Tienes ${myJobs.length} proyecto${myJobs.length>1?'s':''} activo${myJobs.length>1?'s':''} a tu cargo: ` + myJobs.slice(0,3).map(j=>escapeHtml(j.title)).join(', ') + (myJobs.length>3?`, y ${myJobs.length-3} más`:'') + '.'
+      : `🗂️ No tienes proyectos activos asignados a ti.`;
+  }
+
+  const alerts = [];
+  if(overdueJobs.length) alerts.push(`⚠ ${overdueJobs.length} proyecto${overdueJobs.length>1?'s':''} atrasado${overdueJobs.length>1?'s':''}`);
+  if(urgentJobs.length) alerts.push(`🔥 ${urgentJobs.length} súper urgente${urgentJobs.length>1?'s':''}`);
+  if(pendingBudgets.length) alerts.push(`📨 ${pendingBudgets.length} presupuesto${pendingBudgets.length>1?'s':''} enviado${pendingBudgets.length>1?'s':''} sin respuesta`);
+  if(unpaidBudgets.length) alerts.push(`💰 ${unpaidBudgets.length} presupuesto${unpaidBudgets.length>1?'s':''} con saldo por cobrar`);
+  const alertsLine = alerts.length ? `${alerts.join(' · ')}.` : '';
 
   return `
   <div class="gh-ovo-card">
     <div class="gh-ovo-head"><span style="font-size:22px;">🦉</span><div><div class="gh-ovo-name">Ovo${displayName?` — ¡Hola, ${escapeHtml(displayName)}!`:''}</div><div class="gh-ovo-tag">Tu asistente de GABA Home</div></div></div>
     <div class="gh-ovo-body">
-      ${apptLine}<br>${taskLine}<br>
+      ${apptLine}<br>${taskLine}<br>${myJobsLine?myJobsLine+'<br>':''}
       Pendientes del equipo en total: <span class="gh-ovo-link" onclick="ghSetView('tasks')">${allPending}</span>.
+      ${alertsLine?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.15);">${alertsLine}</div>`:''}
     </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="gh-btn secondary small" style="background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.25);" onclick="ghAskOvo('atrasados')">¿Qué está atrasado?</button>
+      <button class="gh-btn secondary small" style="background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.25);" onclick="ghAskOvo('cobrar')">¿Qué falta por cobrar?</button>
+      <button class="gh-btn secondary small" style="background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.25);" onclick="ghAskOvo('semana')">¿Qué tengo esta semana?</button>
+    </div>
+    ${state.ovoAnswer?`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.25);font-size:calc(12.5px * var(--fs-mult,1));">${state.ovoAnswer}</div>`:''}
   </div>`;
 }
 
@@ -995,7 +1023,7 @@ function apptRow(a){
   const badge = apptBadge(a.date);
   const job = state.jobs.find(j=>j.id===a.jobId);
   return `
-  <div class="gh-appt">
+  <div class="gh-appt" style="cursor:pointer;" onclick="ghPreviewAppt('${a.id}')">
     <div class="gh-appt-date">${fmtDate(a.date)}<div style="font-size:calc(10px * var(--fs-mult,1));color:var(--ink-soft);font-weight:500;margin-top:2px">${a.time||''}</div></div>
     <div class="gh-appt-body">
       <div class="gh-appt-title">${escapeHtml(a.title)}</div>
@@ -1003,25 +1031,25 @@ function apptRow(a){
     </div>
     <span class="gh-appt-badge" style="background:${badge.bg};color:${badge.fg}">${badge.label}</span>
     <div class="gh-job-actions">
-      <button class="gh-btn ghost small" onclick="window.open(googleCalendarLink(state.appointments.find(x=>x.id==='${a.id}')), '_blank')" title="Se abre Google Calendar para guardarla">📅 Guardar en mi calendario</button>
-      <button class="gh-btn ghost small" onclick="ghDownloadApptICS('${a.id}')" title="Para Apple Calendar / Outlook">⬇️ .ics</button>
-      <button class="gh-wa-btn" onclick="ghSendApptWhatsapp('${a.id}')">${iconWhatsapp()} Avisar por WhatsApp</button>
-      <button class="gh-btn ghost small" onclick="ghEditAppt('${a.id}')">${iconEdit()}</button>
-      <button class="gh-btn ghost small" onclick="ghDeleteAppt('${a.id}')">${iconTrash()}</button>
+      <button class="gh-btn ghost small" onclick="event.stopPropagation();window.open(googleCalendarLink(state.appointments.find(x=>x.id==='${a.id}')), '_blank')" title="Se abre Google Calendar para guardarla">📅 Guardar en mi calendario</button>
+      <button class="gh-btn ghost small" onclick="event.stopPropagation();ghDownloadApptICS('${a.id}')" title="Para Apple Calendar / Outlook">⬇️ .ics</button>
+      <button class="gh-wa-btn" onclick="event.stopPropagation();ghSendApptWhatsapp('${a.id}')">${iconWhatsapp()} Avisar por WhatsApp</button>
+      <button class="gh-btn ghost small" onclick="event.stopPropagation();ghEditAppt('${a.id}')">${iconEdit()}</button>
+      <button class="gh-btn ghost small" onclick="event.stopPropagation();ghDeleteAppt('${a.id}')">${iconTrash()}</button>
     </div>
   </div>`;
 }
 
 function jobCard(j){
   const tc = TYPE_COLORS[j.type] || TYPE_COLORS.otro;
-  const member = state.team.find(m=>m.id===j.assignedTo);
+  const assignedMembers = (Array.isArray(j.assignedTo)?j.assignedTo:(j.assignedTo?[j.assignedTo]:[])).map(id=>state.team.find(m=>m.id===id)).filter(Boolean);
   const overdue = isOverdue(j);
   return `
-  <div class="gh-job">
+  <div class="gh-job" style="cursor:pointer;" onclick="ghPreviewJob('${j.id}')">
     <div class="gh-job-top">
       <div>
         <div class="gh-job-title">${escapeHtml(j.title)}</div>
-        <div class="gh-job-meta">${j.folio?`<span class="gh-folio">${j.folio}</span> · `:''}${escapeHtml(j.client||'Sin cliente')}${member?` · ${escapeHtml(member.name)}`:''}${j.location?` · <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 ${escapeHtml(j.location)}</a>`:''}${j.tramitologia?` · Trámite: ${TRAMITOLOGIA[j.tramitologia]}`:''}</div>
+        <div class="gh-job-meta">${j.folio?`<span class="gh-folio">${j.folio}</span> · `:''}${escapeHtml(j.client||'Sin cliente')}${assignedMembers.length?` · ${assignedMembers.map(m=>escapeHtml(m.apodo||m.name)).join(', ')}`:''}${j.location?` · <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 ${escapeHtml(j.location)}</a>`:''}${j.tramitologia?` · Trámite: ${TRAMITOLOGIA[j.tramitologia]}`:''}</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
         ${overdue?`<span class="gh-atraso">Atrasado</span>`:''}
@@ -1035,9 +1063,9 @@ function jobCard(j){
     <div class="gh-job-foot">
       <span>Avance: ${j.progress||0}% ${j.dueDate?`· Entrega: ${fmtDate(j.dueDate)}`:''}</span>
       <div class="gh-job-actions">
-        <button class="gh-btn ghost small" onclick="ghOpenJobDetail('${j.id}')">📁 Expediente</button>
-        <button class="gh-btn ghost small" onclick="ghEditJob('${j.id}')">${iconEdit()}</button>
-        <button class="gh-btn ghost small" onclick="ghDeleteJob('${j.id}')">${iconTrash()}</button>
+        <button class="gh-btn ghost small" onclick="event.stopPropagation();ghOpenJobDetail('${j.id}')">📁 Expediente</button>
+        <button class="gh-btn ghost small" onclick="event.stopPropagation();ghEditJob('${j.id}')">${iconEdit()}</button>
+        <button class="gh-btn ghost small" onclick="event.stopPropagation();ghDeleteJob('${j.id}')">${iconTrash()}</button>
       </div>
     </div>
   </div>`;
@@ -1077,7 +1105,7 @@ function viewJobDetail(){
     <button class="gh-btn secondary" onclick="ghSetView('jobs')">← Volver a trabajos</button>`;
   }
   const tc = TYPE_COLORS[j.type] || TYPE_COLORS.otro;
-  const member = state.team.find(m=>m.id===j.assignedTo);
+  const assignedMembers = (Array.isArray(j.assignedTo)?j.assignedTo:(j.assignedTo?[j.assignedTo]:[])).map(id=>state.team.find(m=>m.id===id)).filter(Boolean);
   const overdue = isOverdue(j);
   const relBudgets = state.budgets.filter(b=>b.jobId===j.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const relAppts = state.appointments.filter(a=>a.jobId===j.id).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
@@ -1097,7 +1125,7 @@ function viewJobDetail(){
         ${j.acceptance?`<span class="gh-tag" style="background:${j.acceptance==='aceptado'?'var(--moss-soft)':'var(--ochre-soft)'};color:${j.acceptance==='aceptado'?'var(--moss)':'var(--ochre)'}">${ACCEPTANCE[j.acceptance]}</span>`:''}
       </div>
       <h1 class="gh-title">${escapeHtml(j.title)}</h1>
-      <div class="gh-subtitle">${escapeHtml(j.client||'Sin cliente')}${member?` · Responsable: ${escapeHtml(member.name)}`:''}${j.location?` · <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener">📍 ${escapeHtml(j.location)}</a>`:''}${j.tramitologia?` · Trámite: ${TRAMITOLOGIA[j.tramitologia]}`:''}</div>
+      <div class="gh-subtitle">${escapeHtml(j.client||'Sin cliente')}${assignedMembers.length?` · Responsable${assignedMembers.length>1?'s':''}: ${assignedMembers.map(m=>escapeHtml(m.apodo||m.name)).join(', ')}`:''}${j.location?` · <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener">📍 ${escapeHtml(j.location)}</a>`:''}${j.tramitologia?` · Trámite: ${TRAMITOLOGIA[j.tramitologia]}`:''}</div>
     </div>
     <div style="display:flex;gap:8px;">
       <button class="gh-wa-btn" onclick="ghSendJobExpedienteWhatsapp('${j.id}')">${iconWhatsapp()} Resumen por WhatsApp</button>
@@ -1411,7 +1439,7 @@ function viewTeam(){
   </div>
   ${state.team.length===0 ? emptyState('Agrega a tu equipo para poder asignarles trabajos.') :
     state.team.map(m=>{
-      const assigned = state.jobs.filter(j=>j.assignedTo===m.id && j.status!=='terminado').length;
+      const assigned = state.jobs.filter(j=>(Array.isArray(j.assignedTo)?j.assignedTo.includes(m.id):j.assignedTo===m.id) && j.status!=='terminado').length;
       return `
       <div class="gh-team-card">
         <div class="gh-avatar">${(m.apodo||m.name||'?').trim().slice(0,1).toUpperCase()}</div>
@@ -1490,6 +1518,8 @@ function modal(){
   if(state.modal==='payment') return modalPayment();
   if(state.modal==='quickappt') return modalQuickAppt();
   if(state.modal==='whoami') return modalWhoAmI();
+  if(state.modal==='jobpreview') return modalJobPreview();
+  if(state.modal==='apptpreview') return modalApptPreview();
   return '';
 }
 
@@ -1517,11 +1547,11 @@ function modalJob(){
       <input class="gh-input" id="f-customtype" value="${escAttr(d.customType)}" placeholder="Ej. Deslinde catastral">
     </div>
     <div class="gh-row2">
-      <div class="gh-field"><label class="gh-label">Asignado a</label>
-        <select class="gh-select" id="f-assigned">
-          <option value="">Sin asignar</option>
-          ${state.team.map(m=>`<option value="${m.id}" ${d.assignedTo===m.id?'selected':''}>${escapeHtml(m.name)}</option>`).join('')}
-        </select>
+      <div class="gh-field"><label class="gh-label">Asignado a (puedes elegir varios)</label>
+        <div style="display:flex; flex-direction:column; gap:6px; border:1.4px solid var(--border); border-radius:7px; padding:9px 12px; background:#fff;">
+          ${state.team.length===0 ? '<span style="font-size:12px;color:var(--ink-soft);">Agrega integrantes en la pestaña Equipo</span>' :
+            state.team.map(m=>`<label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;"><input type="checkbox" class="gh-checkbox job-assigned-cb" value="${m.id}" ${(d.assignedTo||[]).includes(m.id)?'checked':''}> ${escapeHtml(m.apodo||m.name)}</label>`).join('')}
+        </div>
       </div>
       <div class="gh-field"><label class="gh-label">Estado</label>
         <select class="gh-select" id="f-status">${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${d.status===k?'selected':''}>${v}</option>`).join('')}</select>
@@ -1716,6 +1746,83 @@ function modalQuickAppt(){
   </div>`;
 }
 
+function modalJobPreview(){
+  const j = state.jobs.find(x=>x.id===state.previewId);
+  if(!j) return '';
+  const tc = TYPE_COLORS[j.type] || TYPE_COLORS.otro;
+  const assignedMembers = (Array.isArray(j.assignedTo)?j.assignedTo:(j.assignedTo?[j.assignedTo]:[])).map(id=>state.team.find(m=>m.id===id)).filter(Boolean);
+  const overdue = isOverdue(j);
+  const urgencyLine = overdue ? `<span class="gh-atraso">⚠ Atrasado</span>` :
+    (j.priority==='super_urgente' ? `<span class="gh-priority-super_urgente">🔥 Súper urgente</span>` :
+    (j.priority==='alta' ? `<span class="gh-priority-alta">Prioridad alta</span>` :
+    (j.priority==='baja' ? `<span class="gh-priority-baja">Prioridad baja</span>` : `<span class="gh-tag" style="background:var(--ochre-soft);color:var(--ochre)">Prioridad media</span>`)));
+
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;">
+      <div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+          ${urgencyLine}
+          <span class="gh-tag" style="background:${tc.bg};color:${tc.fg}">${typeLabel(j)}</span>
+          <span class="gh-stamp ${j.status}">${STATUS[j.status]}</span>
+        </div>
+        <div class="gh-modal-title" style="margin-bottom:0;">${escapeHtml(j.title)}</div>
+        ${j.folio?`<span class="gh-folio">${j.folio}</span>`:''}
+      </div>
+    </div>
+    <div style="font-size:calc(13px * var(--fs-mult,1));line-height:1.8;">
+      <div><strong>Cliente:</strong> ${escapeHtml(j.client||'—')}</div>
+      ${assignedMembers.length?`<div><strong>Responsables:</strong> ${assignedMembers.map(m=>escapeHtml(m.apodo||m.name)).join(', ')}</div>`:''}
+      ${j.location?`<div><strong>Ubicación:</strong> <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener">📍 ${escapeHtml(j.location)}</a></div>`:''}
+      ${j.tramitologia?`<div><strong>Trámite:</strong> ${TRAMITOLOGIA[j.tramitologia]}</div>`:''}
+      ${j.acceptance?`<div><strong>Aceptación:</strong> ${ACCEPTANCE[j.acceptance]}</div>`:''}
+      <div><strong>Inicio:</strong> ${j.startDate?fmtDate(j.startDate):'—'} &nbsp; <strong>Entrega:</strong> ${j.dueDate?fmtDate(j.dueDate):'—'}</div>
+    </div>
+    <div style="margin-top:12px;">
+      <div class="gh-job-foot" style="margin-bottom:4px;"><span>Avance del proyecto</span><span>${j.progress||0}%</span></div>
+      <div class="gh-progress-track"><div class="gh-progress-fill" style="width:${j.progress||0}%"></div></div>
+    </div>
+    ${j.notes?`<div style="margin-top:12px;font-size:calc(13px * var(--fs-mult,1));color:var(--ink-soft);border-top:1px dashed var(--border);padding-top:10px;">${escapeHtml(j.notes)}</div>`:''}
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cerrar</button>
+      <button class="gh-btn ghost" onclick="ghCloseModal();ghOpenJobDetail('${j.id}')">📁 Ver expediente</button>
+      <button class="gh-btn" onclick="ghCloseModal();ghEditJob('${j.id}')">${iconEdit()} Editar</button>
+    </div>
+  </div>
+  </div>`;
+}
+
+function modalApptPreview(){
+  const a = state.appointments.find(x=>x.id===state.previewId);
+  if(!a) return '';
+  const job = state.jobs.find(j=>j.id===a.jobId);
+  const badge = apptBadge(a.date);
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+      <span class="gh-appt-badge" style="background:${badge.bg};color:${badge.fg};font-size:calc(11px * var(--fs-mult,1));">${badge.label}</span>
+    </div>
+    <div class="gh-modal-title">${escapeHtml(a.title)}</div>
+    <div style="font-size:calc(13px * var(--fs-mult,1));line-height:1.8;margin-top:6px;">
+      <div><strong>Fecha:</strong> ${fmtDate(a.date)}${a.time?` a las ${a.time} hrs`:''}</div>
+      ${a.client?`<div><strong>Cliente:</strong> ${escapeHtml(a.client)}</div>`:''}
+      ${a.phone?`<div><strong>Teléfono:</strong> ${escapeHtml(a.phone)}</div>`:''}
+      ${a.location?`<div><strong>Lugar:</strong> <a class="gh-maps-link" href="${mapsLink(a.location)}" target="_blank" rel="noopener">📍 ${escapeHtml(a.location)}</a></div>`:''}
+      ${job?`<div><strong>Proyecto:</strong> ${escapeHtml(job.title)}${job.folio?` (${job.folio})`:''}</div>`:''}
+      <div><strong>Recordatorio:</strong> ${REMINDER_OPTS.find(r=>r.id===a.reminder)?.label||'Sin recordatorio'}</div>
+    </div>
+    ${a.notes?`<div style="margin-top:10px;font-size:calc(13px * var(--fs-mult,1));color:var(--ink-soft);border-top:1px dashed var(--border);padding-top:10px;">${escapeHtml(a.notes)}</div>`:''}
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cerrar</button>
+      <button class="gh-btn ghost" onclick="ghCloseModal();window.open(googleCalendarLink(state.appointments.find(x=>x.id==='${a.id}')), '_blank')">📅 Calendario</button>
+      <button class="gh-btn" onclick="ghCloseModal();ghEditAppt('${a.id}')">${iconEdit()} Editar</button>
+    </div>
+  </div>
+  </div>`;
+}
+
 function modalWhoAmI(){
   return `
   <div class="gh-overlay">
@@ -1830,7 +1937,7 @@ window.ghSaveJob = async function(){
     customType: document.getElementById('f-customtype').value.trim(),
     tramitologia: document.getElementById('f-tramitologia').value,
     acceptance: document.getElementById('f-acceptance').value,
-    assignedTo: document.getElementById('f-assigned').value,
+    assignedTo: Array.from(document.querySelectorAll('.job-assigned-cb:checked')).map(el=>el.value),
     status: document.getElementById('f-status').value,
     startDate: document.getElementById('f-start').value,
     dueDate: document.getElementById('f-due').value,
@@ -1862,6 +1969,32 @@ window.ghSaveJob = async function(){
 };
 
 window.ghOpenJobDetail = function(id){ state.view='jobDetail'; state.selectedJobId=id; render(); };
+
+window.ghAskOvo = function(question){
+  let answer = '';
+  if(question==='atrasados'){
+    const overdueJobs = state.jobs.filter(j=>isOverdue(j));
+    answer = overdueJobs.length
+      ? `🦉 Atrasados: ${overdueJobs.map(j=>escapeHtml(j.title)+(j.dueDate?` (venció ${fmtDate(j.dueDate)})`:'')).join(', ')}.`
+      : `🦉 No tienes ningún proyecto atrasado ahorita. 👍`;
+  }else if(question==='cobrar'){
+    const unpaid = state.budgets.filter(b=>budgetTotal(b).balance>0 && (b.status==='aprobado'||b.status==='enviado'));
+    const total = unpaid.reduce((s,b)=>s+budgetTotal(b).balance,0);
+    answer = unpaid.length
+      ? `🦉 Te deben ${fmtMoney(total)} en total, de: ${unpaid.map(b=>`${escapeHtml(b.title)} (${fmtMoney(budgetTotal(b).balance)})`).join(', ')}.`
+      : `🦉 No tienes saldos pendientes por cobrar. 🎉`;
+  }else if(question==='semana'){
+    const weekAppts = state.appointments.filter(a=>daysUntil(a.date)>=0 && daysUntil(a.date)<=7).sort((a,b)=>a.date.localeCompare(b.date));
+    answer = weekAppts.length
+      ? `🦉 Esta semana tienes: ${weekAppts.map(a=>`${escapeHtml(a.title)} (${fmtDate(a.date)}${a.time?` ${a.time}`:''})`).join(', ')}.`
+      : `🦉 No tienes citas registradas para los próximos 7 días.`;
+  }
+  state.ovoAnswer = answer;
+  render();
+};
+
+window.ghPreviewJob = function(id){ state.modal='jobpreview'; state.previewId=id; render(); };
+window.ghPreviewAppt = function(id){ state.modal='apptpreview'; state.previewId=id; render(); };
 
 window.ghOpenWhoAmI = function(){ state.modal='whoami'; render(); };
 window.ghSetCurrentUser = function(id){
