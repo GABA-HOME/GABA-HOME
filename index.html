@@ -337,7 +337,14 @@ body{margin:0;padding:0;}
 .gh-report-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:calc(13px * var(--fs-mult,1));}
 .gh-report-row:last-child{border-bottom:none;}
 
-/* Ovo assistant card */
+/* Dashboard two-column layout */
+.gh-dash-grid{display:grid; grid-template-columns:1fr 340px; gap:24px; align-items:start;}
+.gh-dash-side{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;}
+@media (max-width:960px){
+  .gh-dash-grid{grid-template-columns:1fr;}
+}
+
+/* Gabin assistant card */
 .gh-ovo-card{
   background:linear-gradient(135deg, #16232B 0%, #2F5D73 100%); color:#EDEFEA;
   border-radius:var(--radius); padding:18px 20px; margin-bottom:22px;
@@ -449,7 +456,7 @@ const CHECKLIST_TEMPLATES = {
   otro: []
 };
 const PRIORITIES = {baja:'Baja', media:'Media', alta:'Alta', super_urgente:'Súper urgente'};
-const ACCEPTANCE = {en_proceso:'En proceso de aceptación', aceptado:'Proyecto aceptado'};
+const ACCEPTANCE = {en_proceso:'En proceso de aceptación', aceptado_cliente:'Aceptado por el cliente', aceptado_equipo:'Aceptado por nosotros'};
 
 let state = {
   view:'dashboard',
@@ -668,7 +675,9 @@ function budgetTotal(b){
   const iva = b.iva ? sub*0.16 : 0;
   const total = sub+iva;
   const paid = (b.payments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0);
-  return {sub, iva, total, paid, balance: total-paid};
+  const anticipos = (b.payments||[]).filter(p=>p.type==='anticipo');
+  const totalAnticipos = anticipos.reduce((s,p)=>s+(Number(p.amount)||0),0);
+  return {sub, iva, total, paid, balance: total-paid, anticipos, totalAnticipos};
 }
 function budgetWaMessage(b){
   const t = budgetTotal(b);
@@ -1045,7 +1054,7 @@ function ovoCard(){
 
   return `
   <div class="gh-ovo-card">
-    <div class="gh-ovo-head"><span style="font-size:22px;">🦉</span><div><div class="gh-ovo-name">Ovo${displayName?` — ¡Hola, ${escapeHtml(displayName)}!`:''}</div><div class="gh-ovo-tag">Tu asistente de GABA Home</div></div></div>
+    <div class="gh-ovo-head"><span style="font-size:22px;">🦉</span><div><div class="gh-ovo-name">Gabin${displayName?` — ¡Hola, ${escapeHtml(displayName)}!`:''}</div><div class="gh-ovo-tag">Tu asistente de GABA Home</div></div></div>
     <div class="gh-ovo-body">
       ${apptLine}<br>${taskLine}<br>${myJobsLine?myJobsLine+'<br>':''}
       Pendientes del equipo en total: <span class="gh-ovo-link" onclick="ghSetView('tasks')">${allPending}</span>.
@@ -1055,6 +1064,7 @@ function ovoCard(){
       <button class="gh-btn secondary small" style="background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.25);" onclick="ghAskOvo('atrasados')">¿Qué está atrasado?</button>
       <button class="gh-btn secondary small" style="background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.25);" onclick="ghAskOvo('cobrar')">¿Qué falta por cobrar?</button>
       <button class="gh-btn secondary small" style="background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.25);" onclick="ghAskOvo('semana')">¿Qué tengo esta semana?</button>
+      <button class="gh-btn secondary small" style="background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.25);" onclick="ghOpenOvoCreate()">✏️ Crear desde texto</button>
     </div>
     ${state.ovoAnswer?`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.25);font-size:calc(12.5px * var(--fs-mult,1));">${state.ovoAnswer}</div>`:''}
   </div>`;
@@ -1086,37 +1096,41 @@ function viewDashboard(){
     <div class="gh-stat"><div class="gh-stat-pin">04</div><div class="gh-stat-num">${avgProgress}%</div><div class="gh-stat-label">Avance promedio</div></div>
   </div>
 
-  ${overdueJobs.length?`
-  <div class="gh-section">
-    <div class="gh-section-head"><div class="gh-section-title">⚠ Trabajos atrasados</div></div>
-    ${overdueJobs.map(j=>jobCard(j)).join('')}
-  </div>`:''}
+  <div class="gh-dash-grid">
+    <div class="gh-dash-main">
+      ${overdueJobs.length?`
+      <div class="gh-section">
+        <div class="gh-section-head"><div class="gh-section-title">⚠ Trabajos atrasados</div></div>
+        ${overdueJobs.map(j=>jobCard(j)).join('')}
+      </div>`:''}
 
-  <div class="gh-section">
-    <div class="gh-section-head">
-      <div class="gh-section-title">Próximas citas</div>
-      <button class="gh-btn ghost" onclick="ghSetView('appts')">Ver todas →</button>
-    </div>
-    ${upcoming.length===0 ? emptyState('No tienes citas próximas todavía.') :
-      upcoming.slice(0,5).map(a=>apptRow(a)).join('')}
-  </div>
+      <div class="gh-section">
+        <div class="gh-section-head">
+          <div class="gh-section-title">Trabajos en progreso</div>
+          <button class="gh-btn ghost" onclick="ghSetView('jobs')">Ver todos →</button>
+        </div>
+        ${inProgress.length===0 ? emptyState('No hay trabajos en proceso.') :
+          inProgress.slice(0,5).map(j=>jobCard(j)).join('')}
+      </div>
 
-  <div class="gh-section">
-    <div class="gh-section-head">
-      <div class="gh-section-title">Trabajos en progreso</div>
-      <button class="gh-btn ghost" onclick="ghSetView('jobs')">Ver todos →</button>
+      <div class="gh-section">
+        <div class="gh-section-head">
+          <div class="gh-section-title">Tareas pendientes</div>
+          <button class="gh-btn ghost" onclick="ghSetView('tasks')">Ver todas →</button>
+        </div>
+        ${pendingTasks.length===0 ? emptyState('No tienes tareas pendientes.') :
+          pendingTasks.slice(0,5).map(t=>taskRow(t)).join('')}
+      </div>
     </div>
-    ${inProgress.length===0 ? emptyState('No hay trabajos en proceso.') :
-      inProgress.slice(0,5).map(j=>jobCard(j)).join('')}
-  </div>
 
-  <div class="gh-section">
-    <div class="gh-section-head">
-      <div class="gh-section-title">Tareas pendientes</div>
-      <button class="gh-btn ghost" onclick="ghSetView('tasks')">Ver todas →</button>
+    <div class="gh-dash-side">
+      <div class="gh-section-head">
+        <div class="gh-section-title">Próximas citas</div>
+        <button class="gh-btn ghost" onclick="ghSetView('appts')">Ver todas →</button>
+      </div>
+      ${upcoming.length===0 ? emptyState('No tienes citas próximas todavía.') :
+        upcoming.slice(0,6).map(a=>apptRow(a)).join('')}
     </div>
-    ${pendingTasks.length===0 ? emptyState('No tienes tareas pendientes.') :
-      pendingTasks.slice(0,5).map(t=>taskRow(t)).join('')}
   </div>
   `;
 }
@@ -1160,7 +1174,7 @@ function jobCard(j){
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
         ${overdue?`<span class="gh-atraso">Atrasado</span>`:''}
         ${(j.priority && j.priority!=='media')?`<span class="gh-priority-${j.priority}">${PRIORITIES[j.priority]}</span>`:''}
-        ${j.acceptance==='aceptado'?`<span class="gh-tag" style="background:var(--moss-soft);color:var(--moss)">Aceptado</span>`:''}
+        ${j.acceptance&&j.acceptance.startsWith('aceptado')?`<span class="gh-tag" style="background:var(--moss-soft);color:var(--moss)">${ACCEPTANCE[j.acceptance]}</span>`:''}
         <span class="gh-tag" style="background:${tc.bg};color:${tc.fg}">${typeLabel(j)}</span>
         <span class="gh-stamp ${j.status}">${STATUS[j.status]}</span>
       </div>
@@ -1229,7 +1243,7 @@ function viewJobDetail(){
         ${overdue?`<span class="gh-atraso">Atrasado</span>`:''}
         ${(j.priority && j.priority!=='media')?`<span class="gh-priority-${j.priority}">${PRIORITIES[j.priority]}</span>`:''}
         ${j.folio?`<span class="gh-folio">${j.folio}</span>`:''}
-        ${j.acceptance?`<span class="gh-tag" style="background:${j.acceptance==='aceptado'?'var(--moss-soft)':'var(--ochre-soft)'};color:${j.acceptance==='aceptado'?'var(--moss)':'var(--ochre)'}">${ACCEPTANCE[j.acceptance]}</span>`:''}
+        ${j.acceptance?`<span class="gh-tag" style="background:${j.acceptance.startsWith('aceptado')?'var(--moss-soft)':'var(--ochre-soft)'};color:${j.acceptance.startsWith('aceptado')?'var(--moss)':'var(--ochre)'}">${ACCEPTANCE[j.acceptance]}</span>`:''}
       </div>
       <h1 class="gh-title">${escapeHtml(j.title)}</h1>
       <div class="gh-subtitle">${escapeHtml(j.client||'Sin cliente')}${assignedMembers.length?` · Responsable${assignedMembers.length>1?'s':''}: ${assignedMembers.map(m=>escapeHtml(m.apodo||m.name)).join(', ')}`:''}${j.location?` · <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener">📍 ${escapeHtml(j.location)}</a>`:''}${j.tramitologia?` · Trámite: ${TRAMITOLOGIA[j.tramitologia]}`:''}</div>
@@ -1247,10 +1261,11 @@ function viewJobDetail(){
         <div class="gh-job-foot" style="margin-bottom:4px;"><span>Proyecto</span><span>${j.progress||0}%</span></div>
         <div class="gh-progress-track" style="height:9px;"><div class="gh-progress-fill" style="width:${j.progress||0}%"></div></div>
       </div>
+      ${j.hasTramitologia?`
       <div style="margin-bottom:12px;">
         <div class="gh-job-foot" style="margin-bottom:4px;"><span>Trámitología</span><span>${j.progressTramitologia||0}%</span></div>
         <div class="gh-progress-track" style="height:9px;"><div class="gh-progress-fill" style="width:${j.progressTramitologia||0}%;background:#5C4A8A;"></div></div>
-      </div>
+      </div>`:''}
       <div style="margin-bottom:${j.customProgressLabel?'12px':'0'};">
         <div class="gh-job-foot" style="margin-bottom:4px;"><span>Presupuesto</span><span>${j.progressPresupuesto||0}%</span></div>
         <div class="gh-progress-track" style="height:9px;"><div class="gh-progress-fill" style="width:${j.progressPresupuesto||0}%;background:var(--ochre);"></div></div>
@@ -1465,7 +1480,7 @@ function taskRow(t){
     <input type="checkbox" class="gh-checkbox" ${t.done?'checked':''} onchange="ghToggleTask('${t.id}')">
     <div style="flex:1;">
       <div class="gh-task-title ${t.done?'done':''}">${escapeHtml(t.title)}</div>
-      <div class="gh-task-meta">${member?escapeHtml(member.name):'Sin asignar'}${t.dueDate?` · Vence: ${fmtDate(t.dueDate)}`:''}${job?` · ${escapeHtml(job.title)}`:''}</div>
+      <div class="gh-task-meta">${member?escapeHtml(member.apodo||member.name):'Sin asignar'}${t.dueDate?` · Vence: ${fmtDate(t.dueDate)}`:''}${job?` · ${escapeHtml(job.title)}${job.folio?` <span class="gh-folio">(${job.folio})</span>`:''}`:''}</div>
     </div>
     <button class="gh-btn ghost small" onclick="ghDeleteTask('${t.id}')">${iconTrash()}</button>
   </div>`;
@@ -1604,8 +1619,9 @@ function budgetCard(b){
     ${!b.iva?`<div style="font-size:calc(11px * var(--fs-mult,1));color:var(--ink-soft);margin-top:2px;">No incluye IVA</div>`:''}
     ${(b.payments&&b.payments.length)?`
     <div style="margin-top:6px;">
-      ${b.payments.map(p=>`<div class="gh-payment-row"><span>Pago ${fmtDate(p.date)}</span><span style="display:flex;align-items:center;gap:6px;">${fmtMoney(p.amount)} <button class="gh-item-remove" onclick="ghDeletePayment('${b.id}','${p.id}')" title="Eliminar pago">×</button></span></div>`).join('')}
+      ${b.payments.map(p=>`<div class="gh-payment-row"><span>${p.type==='anticipo'?'Anticipo':'Pago'} · ${fmtDate(p.date)}</span><span style="display:flex;align-items:center;gap:6px;">${fmtMoney(p.amount)} <button class="gh-item-remove" onclick="ghDeletePayment('${b.id}','${p.id}')" title="Eliminar pago">×</button></span></div>`).join('')}
     </div>`:''}
+    ${t.anticipos.length ? `<div style="font-size:calc(11.5px * var(--fs-mult,1));color:var(--ochre);background:var(--ochre-soft);border-radius:6px;padding:5px 9px;margin-top:6px;">💵 ${t.anticipos.length} anticipo${t.anticipos.length>1?'s':''} recibido${t.anticipos.length>1?'s':''}: ${fmtMoney(t.totalAnticipos)}</div>` : `<div style="font-size:calc(11.5px * var(--fs-mult,1));color:var(--ink-soft);margin-top:6px;">Sin anticipo registrado</div>`}
     <div class="gh-paid-line">
       <span>Pagado: ${fmtMoney(t.paid)}</span>
       <span style="font-weight:700;color:${t.balance>0?'var(--brick)':'var(--moss)'}">Saldo: ${fmtMoney(t.balance)}</span>
@@ -1637,6 +1653,7 @@ function modal(){
   if(state.modal==='jobpreview') return modalJobPreview();
   if(state.modal==='apptpreview') return modalApptPreview();
   if(state.modal==='banksettings') return modalBankSettings();
+  if(state.modal==='ovocreate') return modalOvoCreate();
   return '';
 }
 
@@ -1698,6 +1715,11 @@ function modalJob(){
       <input type="range" min="0" max="100" step="5" id="f-progress" value="${d.progress||0}" style="width:100%" oninput="document.getElementById('f-progress-val').textContent=this.value+'%'">
     </div>
     <div class="gh-field">
+      <label style="display:flex;align-items:center;gap:7px;font-size:calc(13px * var(--fs-mult,1));font-weight:500;">
+        <input type="checkbox" id="f-has-tramitologia" ${d.hasTramitologia?'checked':''} onchange="document.getElementById('gh-tramite-progress-wrap').style.display = this.checked ? 'block':'none';"> ¿Este proyecto lleva trámitología?
+      </label>
+    </div>
+    <div class="gh-field" id="gh-tramite-progress-wrap" style="display:${d.hasTramitologia?'block':'none'};">
       <label class="gh-label">Avance de trámitología: <span class="gh-range-val" id="f-progress-tramite-val">${d.progressTramitologia||0}%</span></label>
       <input type="range" min="0" max="100" step="5" id="f-progress-tramite" value="${d.progressTramitologia||0}" style="width:100%" oninput="document.getElementById('f-progress-tramite-val').textContent=this.value+'%'">
     </div>
@@ -1835,6 +1857,12 @@ function modalPayment(){
   <div class="gh-overlay" onclick="ghCloseModalBg(event)">
   <div class="gh-modal" onclick="event.stopPropagation()">
     <div class="gh-modal-title">Registrar pago</div>
+    <div class="gh-field"><label class="gh-label">Tipo</label>
+      <select class="gh-select" id="f-ptype">
+        <option value="anticipo" ${(d.type||'anticipo')==='anticipo'?'selected':''}>Anticipo</option>
+        <option value="pago" ${d.type==='pago'?'selected':''}>Pago / liquidación</option>
+      </select>
+    </div>
     <div class="gh-row2">
       <div class="gh-field"><label class="gh-label">Monto</label><input type="number" min="0" step="0.01" class="gh-input" id="f-amount" value="${d.amount||''}" placeholder="0.00"></div>
       <div class="gh-field"><label class="gh-label">Fecha</label><input type="date" class="gh-input" id="f-pdate" value="${d.date||todayStr()}"></div>
@@ -1886,7 +1914,7 @@ function modalJobPreview(){
           <span class="gh-stamp ${j.status}">${STATUS[j.status]}</span>
         </div>
         <div class="gh-modal-title" style="margin-bottom:0;">${escapeHtml(j.title)}</div>
-        ${j.folio?`<span class="gh-folio">${j.folio}</span>`:''}
+        ${j.folio?`<span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:calc(20px * var(--fs-mult,1));color:var(--ink);letter-spacing:.5px;">${j.folio}</span>`:''}
       </div>
     </div>
     <div style="font-size:calc(13px * var(--fs-mult,1));line-height:1.8;">
@@ -1963,12 +1991,37 @@ function modalBankSettings(){
   </div>`;
 }
 
+function modalOvoCreate(){
+  const d = state.draft || {};
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">🦉 Crear con Gabin</div>
+    <p style="font-size:calc(12.5px * var(--fs-mult,1));color:var(--ink-soft);margin-top:-6px;">Pega o escribe la información y elige qué quieres crear. Gabin intenta detectar fecha/hora si aplica y prellena lo que puede — tú revisas y completas el resto (no es una IA con acceso a internet, es lógica de la propia app).</p>
+    <div class="gh-field"><label class="gh-label">¿Qué quieres crear?</label>
+      <select class="gh-select" id="gh-ovocreate-type">
+        <option value="job">📁 Expediente (trabajo)</option>
+        <option value="appt">📅 Cita</option>
+        <option value="budget">💰 Presupuesto</option>
+      </select>
+    </div>
+    <div class="gh-field">
+      <textarea class="gh-textarea" id="gh-ovocreate-text" style="min-height:120px;" placeholder="Ej. Avalúo comercial para Héctor Arenzana, terreno en Rancho Largo 311, cita el jueves a las 4pm..."></textarea>
+    </div>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghProcessOvoCreate()">Continuar</button>
+    </div>
+  </div>
+  </div>`;
+}
+
 function modalWhoAmI(){
   return `
   <div class="gh-overlay">
   <div class="gh-modal" onclick="event.stopPropagation()">
     <div class="gh-modal-title">🦉 ¿Quién eres?</div>
-    <p style="font-size:calc(12.5px * var(--fs-mult,1));color:var(--ink-soft);margin-top:-6px;">Así Ovo te saluda por tu nombre y te muestra tus pendientes primero. Todos siguen viendo toda la información igual.</p>
+    <p style="font-size:calc(12.5px * var(--fs-mult,1));color:var(--ink-soft);margin-top:-6px;">Así Gabin te saluda por tu nombre y te muestra tus pendientes primero. Todos siguen viendo toda la información igual.</p>
     <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
       ${state.team.map(m=>`<button class="gh-btn secondary" style="justify-content:flex-start;" onclick="ghSetCurrentUser('${m.id}')">${escapeHtml(m.apodo||m.name)}</button>`).join('')}
       <button class="gh-btn ghost" onclick="ghSetCurrentUser('')">Prefiero no decirlo</button>
@@ -2104,6 +2157,7 @@ window.ghSaveJob = async function(){
     priority: document.getElementById('f-priority').value,
     location: document.getElementById('f-location').value.trim(),
     progress: parseInt(document.getElementById('f-progress').value,10),
+    hasTramitologia: document.getElementById('f-has-tramitologia').checked,
     progressTramitologia: parseInt(document.getElementById('f-progress-tramite').value,10),
     progressPresupuesto: parseInt(document.getElementById('f-progress-presu').value,10),
     customProgressLabel: document.getElementById('f-progress-custom-label').value.trim(),
@@ -2151,6 +2205,26 @@ window.ghAskOvo = function(question){
       : `🦉 No tienes citas registradas para los próximos 7 días.`;
   }
   state.ovoAnswer = answer;
+  render();
+};
+
+window.ghOpenOvoCreate = function(){ state.modal='ovocreate'; render(); };
+window.ghProcessOvoCreate = function(){
+  const type = document.getElementById('gh-ovocreate-type').value;
+  const text = document.getElementById('gh-ovocreate-text').value.trim();
+  if(!text) return;
+  const firstLine = text.split('\n')[0].slice(0,80);
+  if(type==='appt'){
+    const parsed = parseQuickApptText(text);
+    state.modal='appt'; state.editingId=null;
+    state.draft = {title:firstLine, date: parsed.date || todayStr(), time: parsed.time || '', reminder:'1day', notes:text};
+  }else if(type==='job'){
+    state.modal='job'; state.editingId=null;
+    state.draft = {title:firstLine, type:'otro', status:'en_presupuesto', progress:0, priority:'media', acceptance:'en_proceso', folio:nextFolio(), notes:text};
+  }else if(type==='budget'){
+    state.modal='budget'; state.editingId=null;
+    state.draft = {title:firstLine, status:'borrador', paymentStatus:'pendiente', budgetType:'libre', iva:true, items:[{concept:'', unit:'SERVICIO', qty:1, unitPrice:''}]};
+  }
   render();
 };
 
@@ -2405,15 +2479,16 @@ window.ghOpenNewPayment = function(budgetId){ state.modal='payment'; state.payme
 window.ghSavePayment = async function(){
   const amount = Number(document.getElementById('f-amount').value)||0;
   const date = document.getElementById('f-pdate').value || todayStr();
+  const type = document.getElementById('f-ptype').value || 'anticipo';
   if(amount<=0){ state.modal=null; render(); return; }
   const budget = state.budgets.find(b=>b.id===state.paymentTargetId);
   if(budget){
     budget.payments = budget.payments || [];
-    budget.payments.push({id:uid(), amount, date});
+    budget.payments.push({id:uid(), amount, date, type});
   }
   state.modal=null; render();
   await saveKey('budgets', state.budgets);
-  if(budget && budget.jobId) await addJobLog(budget.jobId, `Pago registrado: ${fmtMoney(amount)} en presupuesto "${budget.title}"`);
+  if(budget && budget.jobId) await addJobLog(budget.jobId, `${type==='anticipo'?'Anticipo':'Pago'} registrado: ${fmtMoney(amount)} en presupuesto "${budget.title}"`);
 };
 window.ghDeletePayment = async function(budgetId, paymentId){
   const budget = state.budgets.find(b=>b.id===budgetId);
