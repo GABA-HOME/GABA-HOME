@@ -456,12 +456,18 @@ const CHECKLIST_TEMPLATES = {
   otro: []
 };
 const PRIORITIES = {baja:'Baja', media:'Media', alta:'Alta', super_urgente:'Súper urgente'};
+const PROSPECT_STAGES = {contactado:'Contactado', cotizado:'Cotizado', negociacion:'En negociación', ganado:'Ganado', perdido:'Perdido'};
+const PROSPECT_STAGE_COLOR = {
+  contactado:{bg:'#DCE7EA',fg:'#2F5D73'}, cotizado:{bg:'#F3E7D0',fg:'#8A5D18'},
+  negociacion:{bg:'#E4DEF0',fg:'#5C4A8A'}, ganado:{bg:'#DEE8DD',fg:'#4F7A52'}, perdido:{bg:'#F1DFD5',fg:'#A64B2A'}
+};
+const FOLLOWUP_DAYS = 4;
 const ACCEPTANCE = {en_proceso:'En proceso de aceptación', aceptado_cliente:'Aceptado por el cliente', aceptado_equipo:'Aceptado por nosotros'};
 
 let state = {
   view:'dashboard',
   loading:true,
-  jobs:[], appointments:[], team:[], budgets:[], clients:[], tasks:[],
+  jobs:[], appointments:[], team:[], budgets:[], clients:[], tasks:[], prospects:[],
   modal:null, // 'job' | 'appt' | 'team' | 'budget' | 'client' | 'task' | 'payment'
   editingId:null,
   paymentTargetId:null,
@@ -560,8 +566,8 @@ window.ghRetrySave = async function(){
 };
 
 async function init(){
-  const [jobs, appointments, team, budgets, clients, tasks, settings] = await Promise.all([loadKey('jobs'), loadKey('appointments'), loadKey('team'), loadKey('budgets'), loadKey('clients'), loadKey('tasks'), loadObjKey('settings')]);
-  state.jobs = jobs; state.appointments = appointments; state.team = team; state.budgets = budgets; state.clients = clients; state.tasks = tasks; state.settings = settings;
+  const [jobs, appointments, team, budgets, clients, tasks, settings, prospects] = await Promise.all([loadKey('jobs'), loadKey('appointments'), loadKey('team'), loadKey('budgets'), loadKey('clients'), loadKey('tasks'), loadObjKey('settings'), loadKey('prospects')]);
+  state.jobs = jobs; state.appointments = appointments; state.team = team; state.budgets = budgets; state.clients = clients; state.tasks = tasks; state.settings = settings; state.prospects = prospects;
   if(state.team.length===0 && !fbHadError && !isOffline){
     state.team = [
       {id:uid(), name:'Ing. Guadalupe Montero', role:'Ingeniero/a'},
@@ -650,6 +656,10 @@ function googleCalendarLink(a){
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
+function ovoSignature(){
+  const me = state.team.find(m=>m.id===state.currentUserId);
+  return me ? `\n\nAtentamente,\n${me.apodo||me.name}\nGABA HOME` : `\n\nGABA HOME`;
+}
 function apptWaMessage(a){
   const job = state.jobs.find(j=>j.id===a.jobId);
   let msg = `*GABA HOME*\n_Arquitectura · Ingeniería · Topografía_\n\n`;
@@ -662,6 +672,7 @@ function apptWaMessage(a){
   if(job) msg += `▪ Proyecto: ${job.title}${job.folio?` (${job.folio})`:''}\n`;
   if(a.notes) msg += `▪ Notas: ${a.notes}\n`;
   msg += `\n🗓️ Guardar en el calendario:\n${googleCalendarLink(a)}`;
+  msg += ovoSignature();
   return msg;
 }
 function itemAmount(it){
@@ -678,6 +689,13 @@ function budgetTotal(b){
   const anticipos = (b.payments||[]).filter(p=>p.type==='anticipo');
   const totalAnticipos = anticipos.reduce((s,p)=>s+(Number(p.amount)||0),0);
   return {sub, iva, total, paid, balance: total-paid, anticipos, totalAnticipos};
+}
+function jobPriceTotal(j){
+  const price = Number(j.fixedPrice)||0;
+  const paid = (j.pricePayments||[]).reduce((s,p)=>s+(Number(p.amount)||0),0);
+  const anticipos = (j.pricePayments||[]).filter(p=>p.type==='anticipo');
+  const totalAnticipos = anticipos.reduce((s,p)=>s+(Number(p.amount)||0),0);
+  return {price, paid, balance: price-paid, anticipos, totalAnticipos};
 }
 function budgetWaMessage(b){
   const t = budgetTotal(b);
@@ -709,6 +727,7 @@ function budgetWaMessage(b){
   }
   msg += `\nNOTAS: Vigencia de esta cotización 30 días.\n`;
   msg += `\nQuedamos atentos a tus comentarios.`;
+  msg += ovoSignature();
   return msg;
 }
 function fmtDateTime(ts){
@@ -800,8 +819,9 @@ function globalSearchResults(q){
   if(!query) return [];
   const results = [];
   state.jobs.forEach(j=>{
-    if((j.title||'').toLowerCase().includes(query) || (j.client||'').toLowerCase().includes(query) || (j.folio||'').toLowerCase().includes(query)){
-      results.push({kind:'Trabajo', label:j.title, sub:j.client||'Sin cliente', action:`ghOpenJobDetail('${j.id}')`});
+    if((j.title||'').toLowerCase().includes(query) || (j.client||'').toLowerCase().includes(query) || (j.folio||'').toLowerCase().includes(query) || (j.location||'').toLowerCase().includes(query)){
+      const subParts = [j.folio||'', j.client||'Sin cliente', j.location||''].filter(Boolean);
+      results.push({kind:'Trabajo', label:j.title, sub:subParts.join(' · '), action:`ghOpenJobDetail('${j.id}')`});
     }
   });
   state.appointments.forEach(a=>{
@@ -944,6 +964,7 @@ function render(){
       ${state.view==='jobDetail' ? viewJobDetail() : ''}
       ${state.view==='appts' ? viewAppts() : ''}
       ${state.view==='budgets' ? viewBudgets() : ''}
+      ${state.view==='prospects' ? viewProspects() : ''}
       ${state.view==='clients' ? viewClients() : ''}
       ${state.view==='clientDetail' ? viewClientDetail() : ''}
       ${state.view==='tasks' ? viewTasks() : ''}
@@ -978,6 +999,7 @@ function sidebar(){
     {id:'jobs', label:'Trabajos', icon:iconLayers()},
     {id:'appts', label:'Citas', icon:iconCalendar()},
     {id:'budgets', label:'Presupuestos', icon:iconMoney()},
+    {id:'prospects', label:'Prospectos', icon:iconTarget()},
     {id:'clients', label:'Clientes', icon:iconUsers()},
     {id:'tasks', label:'Tareas', icon:iconCheck()},
     {id:'reports', label:'Reportes', icon:iconChart()},
@@ -1189,6 +1211,7 @@ function jobCard(j){
       </div>
     </div>
     ${(j.status!=='terminado' && j.pendingReason)?`<div style="font-size:calc(12px * var(--fs-mult,1));color:var(--brick);background:var(--brick-soft);border-radius:6px;padding:6px 10px;">⏳ ${escapeHtml(j.pendingReason)}</div>`:''}
+    ${j.hasFixedPrice?(()=>{ const pt=jobPriceTotal(j); return pt.balance>0 ? `<div style="font-size:calc(11.5px * var(--fs-mult,1));color:var(--ochre);">💵 Precio: ${fmtMoney(pt.price)} · Saldo: ${fmtMoney(pt.balance)}</div>` : `<div style="font-size:calc(11.5px * var(--fs-mult,1));color:var(--moss);">💵 Precio: ${fmtMoney(pt.price)} · Pagado ✓</div>`; })():''}
   </div>`;
 }
 
@@ -1246,7 +1269,8 @@ function viewJobDetail(){
         ${j.acceptance?`<span class="gh-tag" style="background:${j.acceptance.startsWith('aceptado')?'var(--moss-soft)':'var(--ochre-soft)'};color:${j.acceptance.startsWith('aceptado')?'var(--moss)':'var(--ochre)'}">${ACCEPTANCE[j.acceptance]}</span>`:''}
       </div>
       <h1 class="gh-title">${escapeHtml(j.title)}</h1>
-      <div class="gh-subtitle">${escapeHtml(j.client||'Sin cliente')}${assignedMembers.length?` · Responsable${assignedMembers.length>1?'s':''}: ${assignedMembers.map(m=>escapeHtml(m.apodo||m.name)).join(', ')}`:''}${j.location?` · <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener">📍 ${escapeHtml(j.location)}</a>`:''}${j.tramitologia?` · Trámite: ${TRAMITOLOGIA[j.tramitologia]}`:''}</div>
+      <div class="gh-subtitle">${escapeHtml(j.client||'Sin cliente')}${j.clientPhone?` · 📞 ${escapeHtml(j.clientPhone)}`:''}${j.clientEmail?` · ✉️ ${escapeHtml(j.clientEmail)}`:''}${assignedMembers.length?` · Responsable${assignedMembers.length>1?'s':''}: ${assignedMembers.map(m=>escapeHtml(m.apodo||m.name)).join(', ')}`:''}${j.location?` · <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener">📍 ${escapeHtml(j.location)}</a>`:''}${j.tramitologia?` · Trámite: ${TRAMITOLOGIA[j.tramitologia]}`:''}</div>
+      ${(j.requesterName||j.ownerName)?`<div class="gh-subtitle" style="margin-top:4px;">${j.requesterName?`Solicitante: ${escapeHtml(j.requesterName)}${j.requesterPhone?` (${escapeHtml(j.requesterPhone)})`:''}`:''}${(j.requesterName&&j.ownerName)?' · ':''}${j.ownerName?`Propietario/Contacto: ${escapeHtml(j.ownerName)}${j.ownerPhone?` (${escapeHtml(j.ownerPhone)})`:''}`:''}</div>`:''}
     </div>
     <div style="display:flex;gap:8px;">
       <button class="gh-wa-btn" onclick="ghSendJobExpedienteWhatsapp('${j.id}')">${iconWhatsapp()} Resumen por WhatsApp</button>
@@ -1283,6 +1307,33 @@ function viewJobDetail(){
       ${j.notes?`<div style="font-size:calc(13px * var(--fs-mult,1));color:var(--ink-soft);border-top:1px dashed var(--border);padding-top:9px;margin-top:10px;">${escapeHtml(j.notes)}</div>`:''}
     </div>
   </div>
+
+  ${j.hasFixedPrice ? (()=>{
+    const pt = jobPriceTotal(j);
+    return `
+    <div class="gh-section">
+      <div class="gh-section-head">
+        <div class="gh-section-title">Precio y pagos</div>
+      </div>
+      <div class="gh-job">
+        <div class="gh-job-foot"><span>Precio</span><span style="font-weight:700;">${fmtMoney(pt.price)}</span></div>
+        ${(j.pricePayments&&j.pricePayments.length)?`
+        <div style="margin-top:8px;">
+          ${j.pricePayments.map(p=>`<div class="gh-payment-row"><span>${p.type==='anticipo'?'Anticipo':'Pago'} · ${fmtDate(p.date)}</span><span style="display:flex;align-items:center;gap:6px;">${fmtMoney(p.amount)} <button class="gh-item-remove" onclick="ghDeleteJobPayment('${j.id}','${p.id}')" title="Eliminar">×</button></span></div>`).join('')}
+        </div>`:''}
+        ${pt.anticipos.length ? `<div style="font-size:calc(11.5px * var(--fs-mult,1));color:var(--ochre);background:var(--ochre-soft);border-radius:6px;padding:5px 9px;margin-top:8px;">💵 ${pt.anticipos.length} anticipo${pt.anticipos.length>1?'s':''} recibido${pt.anticipos.length>1?'s':''}: ${fmtMoney(pt.totalAnticipos)}</div>` : `<div style="font-size:calc(11.5px * var(--fs-mult,1));color:var(--ink-soft);margin-top:8px;">Sin anticipo registrado</div>`}
+        <div class="gh-paid-line">
+          <span>Pagado: ${fmtMoney(pt.paid)}</span>
+          <span style="font-weight:700;color:${pt.balance>0?'var(--brick)':'var(--moss)'}">${pt.balance>0?`Saldo: ${fmtMoney(pt.balance)}`:'Pagado en su totalidad ✓'}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+          ${pt.balance>0?`<button class="gh-btn secondary small" onclick="ghQuickAdvance('${j.id}',1)">${iconPlus()} ${pt.anticipos.length===0?'Agregar adelanto 1':(pt.anticipos.length===1?'Agregar adelanto 2':'Agregar otro adelanto')}</button>`:''}
+          ${pt.balance>0?`<button class="gh-btn secondary small" onclick="ghMarkJobFullyPaid('${j.id}')">✓ Marcar pagado al 100%</button>`:''}
+          <button class="gh-btn ghost small" onclick="ghOpenNewJobPayment('${j.id}')">Otro monto...</button>
+        </div>
+      </div>
+    </div>`;
+  })() : ''}
 
   <div class="gh-section">
     <div class="gh-section-head">
@@ -1367,6 +1418,61 @@ function viewAppts(){
     <div class="gh-section-head"><div class="gh-section-title">Pasadas</div></div>
     ${past.slice(0,8).map(a=>apptRow(a)).join('')}
   </div>` : ''}
+  `;
+}
+
+function daysSince(dateStr){
+  if(!dateStr) return 9999;
+  return -daysUntil(dateStr);
+}
+function needsFollowup(p){
+  return !['ganado','perdido'].includes(p.stage) && daysSince(p.lastContactDate||p.createdAt && new Date(p.createdAt).toISOString().slice(0,10)) >= FOLLOWUP_DAYS;
+}
+function prospectCard(p){
+  const sc = PROSPECT_STAGE_COLOR[p.stage] || PROSPECT_STAGE_COLOR.contactado;
+  const followup = needsFollowup(p);
+  const lastContact = p.lastContactDate || (p.createdAt ? new Date(p.createdAt).toISOString().slice(0,10) : null);
+  return `
+  <div class="gh-budget-card">
+    <div class="gh-job-top">
+      <div>
+        <div class="gh-job-title">${escapeHtml(p.name)}</div>
+        <div class="gh-job-meta">${escapeHtml(p.phone||'Sin teléfono')}${p.email?` · ${escapeHtml(p.email)}`:''}${p.source?` · ${escapeHtml(p.source)}`:''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+        <span class="gh-budget-status" style="background:${sc.bg};color:${sc.fg}">${PROSPECT_STAGES[p.stage]||'Contactado'}</span>
+        ${followup?`<span class="gh-atraso">⏰ Dar seguimiento</span>`:''}
+      </div>
+    </div>
+    ${p.notes?`<div style="font-size:calc(12.5px * var(--fs-mult,1));color:var(--ink-soft);margin-top:4px;">${escapeHtml(p.notes)}</div>`:''}
+    <div class="gh-job-foot" style="margin-top:8px;">
+      <span>Último contacto: ${lastContact?fmtDate(lastContact):'—'}</span>
+      <div class="gh-job-actions">
+        ${!['ganado','perdido'].includes(p.stage)?`<button class="gh-btn secondary small" onclick="ghMarkProspectContacted('${p.id}')">✓ Contacté hoy</button>`:''}
+        ${p.stage==='ganado'?`<button class="gh-btn secondary small" onclick="ghConvertProspectToClient('${p.id}')">→ Convertir a cliente</button>`:''}
+        <button class="gh-btn ghost small" onclick="ghEditProspect('${p.id}')">${iconEdit()}</button>
+        <button class="gh-btn ghost small" onclick="ghDeleteProspect('${p.id}')">${iconTrash()}</button>
+      </div>
+    </div>
+  </div>`;
+}
+function viewProspects(){
+  let list = state.prospects.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(state.filterStage && state.filterStage!=='todos') list = list.filter(p=>p.stage===state.filterStage);
+  const followupCount = state.prospects.filter(p=>needsFollowup(p)).length;
+  return `
+  <div class="gh-topbar">
+    <div>
+      <h1 class="gh-title">Prospectos</h1>
+      <div class="gh-subtitle">${state.prospects.length} en total${followupCount?` · ${followupCount} necesitan seguimiento`:''}</div>
+    </div>
+    <button class="gh-btn" onclick="ghOpenNewProspect()">${iconPlus()} Nuevo prospecto</button>
+  </div>
+  <div class="gh-filters">
+    <button class="gh-chip ${(!state.filterStage||state.filterStage==='todos')?'active':''}" onclick="ghFilterProspects('todos')">Todos</button>
+    ${Object.entries(PROSPECT_STAGES).map(([k,v])=>`<button class="gh-chip ${state.filterStage===k?'active':''}" onclick="ghFilterProspects('${k}')">${v}</button>`).join('')}
+  </div>
+  ${list.length===0 ? emptyState('Aún no tienes prospectos. Agrega uno cuando alguien te contacte por primera vez.') : list.map(p=>prospectCard(p)).join('')}
   `;
 }
 
@@ -1654,6 +1760,8 @@ function modal(){
   if(state.modal==='apptpreview') return modalApptPreview();
   if(state.modal==='banksettings') return modalBankSettings();
   if(state.modal==='ovocreate') return modalOvoCreate();
+  if(state.modal==='prospect') return modalProspect();
+  if(state.modal==='jobpayment') return modalJobPayment();
   return '';
 }
 
@@ -1667,6 +1775,18 @@ function modalJob(){
     <div class="gh-row2">
       <div class="gh-field"><label class="gh-label">Cliente</label><input class="gh-input" id="f-client" value="${escAttr(d.client)}" placeholder="Nombre del cliente"></div>
       <div class="gh-field"><label class="gh-label">Núm. de expediente</label><input class="gh-input" id="f-folio" value="${escAttr(d.folio)}" placeholder="Ej. 00-00-01"></div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Teléfono del cliente</label><input class="gh-input" id="f-clientphone" value="${escAttr(d.clientPhone)}" placeholder="Ej. 4421234567"></div>
+      <div class="gh-field"><label class="gh-label">Correo del cliente</label><input class="gh-input" type="email" id="f-clientemail" value="${escAttr(d.clientEmail)}" placeholder="correo@ejemplo.com"></div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Solicitante (nombre)</label><input class="gh-input" id="f-requestername" value="${escAttr(d.requesterName)}" placeholder="Quién pidió el trabajo"></div>
+      <div class="gh-field"><label class="gh-label">Solicitante (tel)</label><input class="gh-input" id="f-requesterphone" value="${escAttr(d.requesterPhone)}" placeholder="Ej. 4421234567"></div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Propietario o contacto (nombre)</label><input class="gh-input" id="f-ownername" value="${escAttr(d.ownerName)}" placeholder="Dueño del inmueble o contacto en sitio"></div>
+      <div class="gh-field"><label class="gh-label">Propietario o contacto (tel)</label><input class="gh-input" id="f-ownerphone" value="${escAttr(d.ownerPhone)}" placeholder="Ej. 4421234567"></div>
     </div>
     <div class="gh-row2">
       <div class="gh-field"><label class="gh-label">Tipo</label>
@@ -1733,6 +1853,16 @@ function modalJob(){
         <label class="gh-label">Valor: <span class="gh-range-val" id="f-progress-custom-val">${d.customProgressValue||0}%</span></label>
         <input type="range" min="0" max="100" step="5" id="f-progress-custom" value="${d.customProgressValue||0}" style="width:100%" oninput="document.getElementById('f-progress-custom-val').textContent=this.value+'%'">
       </div>
+    </div>
+    <div class="gh-field">
+      <label style="display:flex;align-items:center;gap:7px;font-size:calc(13px * var(--fs-mult,1));font-weight:500;">
+        <input type="checkbox" id="f-has-fixedprice" ${d.hasFixedPrice?'checked':''} onchange="document.getElementById('gh-fixedprice-wrap').style.display = this.checked ? 'block':'none';"> ¿Este trabajo tiene precio fijo?
+      </label>
+    </div>
+    <div class="gh-field" id="gh-fixedprice-wrap" style="display:${d.hasFixedPrice?'block':'none'};">
+      <label class="gh-label">Precio</label>
+      <input type="number" min="0" step="0.01" class="gh-input" id="f-fixedprice" value="${d.fixedPrice||''}" placeholder="0.00">
+      <p style="font-size:calc(11.5px * var(--fs-mult,1));color:var(--ink-soft);margin:6px 0 0;">Los anticipos y pagos se registran desde el expediente, una vez guardado el trabajo.</p>
     </div>
     <div class="gh-field"><label class="gh-label">¿Por qué aún no está terminado? (si aplica)</label><textarea class="gh-textarea" id="f-pendingreason" placeholder="Ej. Esperando firma del cliente, falta pago de derechos, etc.">${escapeHtml(d.pendingReason||'')}</textarea></div>
     <div class="gh-field"><label class="gh-label">Notas</label><textarea class="gh-textarea" id="f-notes" placeholder="Detalles del trabajo...">${escapeHtml(d.notes||'')}</textarea></div>
@@ -1875,6 +2005,30 @@ function modalPayment(){
   </div>`;
 }
 
+function modalJobPayment(){
+  const d = state.draft;
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">Registrar pago</div>
+    <div class="gh-field"><label class="gh-label">Tipo</label>
+      <select class="gh-select" id="f-jptype">
+        <option value="anticipo" ${(d.type||'anticipo')==='anticipo'?'selected':''}>Anticipo</option>
+        <option value="pago" ${d.type==='pago'?'selected':''}>Pago / liquidación</option>
+      </select>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Monto</label><input type="number" min="0" step="0.01" class="gh-input" id="f-jpamount" value="${d.amount||''}" placeholder="0.00"></div>
+      <div class="gh-field"><label class="gh-label">Fecha</label><input type="date" class="gh-input" id="f-jpdate" value="${d.date||todayStr()}"></div>
+    </div>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghSaveJobPayment()">Guardar</button>
+    </div>
+  </div>
+  </div>`;
+}
+
 function modalQuickAppt(){
   return `
   <div class="gh-overlay" onclick="ghCloseModalBg(event)">
@@ -1919,6 +2073,10 @@ function modalJobPreview(){
     </div>
     <div style="font-size:calc(13px * var(--fs-mult,1));line-height:1.8;">
       <div><strong>Cliente:</strong> ${escapeHtml(j.client||'—')}</div>
+      ${j.clientPhone?`<div><strong>Teléfono:</strong> ${escapeHtml(j.clientPhone)}</div>`:''}
+      ${j.clientEmail?`<div><strong>Correo:</strong> ${escapeHtml(j.clientEmail)}</div>`:''}
+      ${j.requesterName?`<div><strong>Solicitante:</strong> ${escapeHtml(j.requesterName)}${j.requesterPhone?` (${escapeHtml(j.requesterPhone)})`:''}</div>`:''}
+      ${j.ownerName?`<div><strong>Propietario/Contacto:</strong> ${escapeHtml(j.ownerName)}${j.ownerPhone?` (${escapeHtml(j.ownerPhone)})`:''}</div>`:''}
       ${assignedMembers.length?`<div><strong>Responsables:</strong> ${assignedMembers.map(m=>escapeHtml(m.apodo||m.name)).join(', ')}</div>`:''}
       ${j.location?`<div><strong>Ubicación:</strong> <a class="gh-maps-link" href="${mapsLink(j.location)}" target="_blank" rel="noopener">📍 ${escapeHtml(j.location)}</a></div>`:''}
       ${j.tramitologia?`<div><strong>Trámite:</strong> ${TRAMITOLOGIA[j.tramitologia]}</div>`:''}
@@ -1929,6 +2087,7 @@ function modalJobPreview(){
       <div class="gh-job-foot" style="margin-bottom:4px;"><span>Avance del proyecto</span><span>${j.progress||0}%</span></div>
       <div class="gh-progress-track"><div class="gh-progress-fill" style="width:${j.progress||0}%"></div></div>
     </div>
+    ${j.hasFixedPrice?(()=>{ const pt=jobPriceTotal(j); return `<div class="gh-paid-line" style="margin-top:10px;"><span>Precio: ${fmtMoney(pt.price)} · Pagado: ${fmtMoney(pt.paid)}</span><span style="font-weight:700;color:${pt.balance>0?'var(--brick)':'var(--moss)'}">${pt.balance>0?`Saldo: ${fmtMoney(pt.balance)}`:'Pagado ✓'}</span></div>`; })():''}
     ${(j.status!=='terminado' && j.pendingReason)?`<div style="margin-top:10px;font-size:calc(13px * var(--fs-mult,1));color:var(--brick);background:var(--brick-soft);border-radius:8px;padding:9px 12px;">⏳ <strong>Por qué no está terminado:</strong> ${escapeHtml(j.pendingReason)}</div>`:''}
     ${j.notes?`<div style="margin-top:12px;font-size:calc(13px * var(--fs-mult,1));color:var(--ink-soft);border-top:1px dashed var(--border);padding-top:10px;">${escapeHtml(j.notes)}</div>`:''}
     <div class="gh-modal-actions">
@@ -1997,7 +2156,7 @@ function modalOvoCreate(){
   <div class="gh-overlay" onclick="ghCloseModalBg(event)">
   <div class="gh-modal" onclick="event.stopPropagation()">
     <div class="gh-modal-title">🦉 Crear con Gabin</div>
-    <p style="font-size:calc(12.5px * var(--fs-mult,1));color:var(--ink-soft);margin-top:-6px;">Pega o escribe la información y elige qué quieres crear. Gabin intenta detectar fecha/hora si aplica y prellena lo que puede — tú revisas y completas el resto (no es una IA con acceso a internet, es lógica de la propia app).</p>
+    <p style="font-size:calc(12.5px * var(--fs-mult,1));color:var(--ink-soft);margin-top:-6px;">Pega o escribe la información y elige qué quieres crear. Gabin detecta fecha/hora (citas), dirección ("calle...", "av..."), teléfono y si mencionas a un Lic., Ing., Arq. o Notaría lo pone como solicitante — tú revisas y completas el resto (no es una IA con acceso a internet, es lógica de la propia app).</p>
     <div class="gh-field"><label class="gh-label">¿Qué quieres crear?</label>
       <select class="gh-select" id="gh-ovocreate-type">
         <option value="job">📁 Expediente (trabajo)</option>
@@ -2011,6 +2170,32 @@ function modalOvoCreate(){
     <div class="gh-modal-actions">
       <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
       <button class="gh-btn" onclick="ghProcessOvoCreate()">Continuar</button>
+    </div>
+  </div>
+  </div>`;
+}
+
+function modalProspect(){
+  const d = state.draft;
+  return `
+  <div class="gh-overlay" onclick="ghCloseModalBg(event)">
+  <div class="gh-modal" onclick="event.stopPropagation()">
+    <div class="gh-modal-title">${state.editingId?'Editar prospecto':'Nuevo prospecto'}</div>
+    <div class="gh-field"><label class="gh-label">Nombre</label><input class="gh-input" id="f-name" value="${escAttr(d.name)}" placeholder="Nombre de quien preguntó"></div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">Teléfono</label><input class="gh-input" id="f-phone" value="${escAttr(d.phone)}" placeholder="Ej. 4421234567"></div>
+      <div class="gh-field"><label class="gh-label">Correo</label><input class="gh-input" id="f-email" value="${escAttr(d.email)}"></div>
+    </div>
+    <div class="gh-row2">
+      <div class="gh-field"><label class="gh-label">¿Cómo te contactó?</label><input class="gh-input" id="f-source" value="${escAttr(d.source)}" placeholder="Ej. Recomendación, Facebook"></div>
+      <div class="gh-field"><label class="gh-label">Etapa</label>
+        <select class="gh-select" id="f-stage">${Object.entries(PROSPECT_STAGES).map(([k,v])=>`<option value="${k}" ${(d.stage||'contactado')===k?'selected':''}>${v}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="gh-field"><label class="gh-label">Notas</label><textarea class="gh-textarea" id="f-notes" placeholder="Qué le interesa, presupuesto aproximado, etc.">${escapeHtml(d.notes||'')}</textarea></div>
+    <div class="gh-modal-actions">
+      <button class="gh-btn secondary" onclick="ghCloseModal()">Cancelar</button>
+      <button class="gh-btn" onclick="ghSaveProspect()">Guardar</button>
     </div>
   </div>
   </div>`;
@@ -2113,6 +2298,7 @@ function iconMark(){
 function iconGrid(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>`;}
 function iconLayers(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;}
 function iconCalendar(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;}
+function iconTarget(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>`;}
 function iconUsers(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.8"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="17" cy="9" r="2.4" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 20c.2-2.6 1.9-4.6 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;}
 function iconChart(){return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M11 20V4M18 20v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;}
 function iconSearch(){return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;}
@@ -2145,6 +2331,14 @@ window.ghSaveJob = async function(){
   const draft = {
     title: document.getElementById('f-title').value.trim() || 'Sin título',
     client: document.getElementById('f-client').value.trim(),
+    clientPhone: document.getElementById('f-clientphone').value.trim(),
+    clientEmail: document.getElementById('f-clientemail').value.trim(),
+    requesterName: document.getElementById('f-requestername').value.trim(),
+    requesterPhone: document.getElementById('f-requesterphone').value.trim(),
+    ownerName: document.getElementById('f-ownername').value.trim(),
+    ownerPhone: document.getElementById('f-ownerphone').value.trim(),
+    hasFixedPrice: document.getElementById('f-has-fixedprice').checked,
+    fixedPrice: Number(document.getElementById('f-fixedprice').value)||0,
     folio: document.getElementById('f-folio').value.trim(),
     type: document.getElementById('f-type').value,
     customType: document.getElementById('f-customtype').value.trim(),
@@ -2176,7 +2370,7 @@ window.ghSaveJob = async function(){
   }else{
     const checklist = (CHECKLIST_TEMPLATES[draft.type]||[]).map(label=>({id:uid(), label, done:false}));
     if(!draft.folio) draft.folio = nextFolio();
-    const newJob = {id:uid(), createdAt:Date.now(), checklist, log:[{id:uid(), ts:Date.now(), text:'Trabajo creado'}], ...draft};
+    const newJob = {id:uid(), createdAt:Date.now(), checklist, pricePayments:[], log:[{id:uid(), ts:Date.now(), text:'Trabajo creado'}], ...draft};
     state.jobs.push(newJob);
     state.modal=null; render();
   }
@@ -2208,7 +2402,54 @@ window.ghAskOvo = function(question){
   render();
 };
 
+window.ghFilterProspects = function(stage){ state.filterStage = stage; render(); };
+window.ghOpenNewProspect = function(){ state.modal='prospect'; state.editingId=null; state.draft={stage:'contactado'}; render(); };
+window.ghEditProspect = function(id){ const p = state.prospects.find(x=>x.id===id); state.modal='prospect'; state.editingId=id; state.draft={...p}; render(); };
+window.ghDeleteProspect = async function(id){ state.prospects = state.prospects.filter(p=>p.id!==id); render(); await saveKey('prospects', state.prospects); };
+window.ghSaveProspect = async function(){
+  const draft = {
+    name: document.getElementById('f-name').value.trim() || 'Sin nombre',
+    phone: document.getElementById('f-phone').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    source: document.getElementById('f-source').value.trim(),
+    stage: document.getElementById('f-stage').value,
+    notes: document.getElementById('f-notes').value.trim()
+  };
+  if(state.editingId){
+    state.prospects = state.prospects.map(p=>p.id===state.editingId?{...p,...draft}:p);
+  }else{
+    state.prospects.push({id:uid(), createdAt:Date.now(), lastContactDate:todayStr(), ...draft});
+  }
+  state.modal=null; render();
+  await saveKey('prospects', state.prospects);
+};
+window.ghMarkProspectContacted = async function(id){
+  state.prospects = state.prospects.map(p=>p.id===id?{...p, lastContactDate:todayStr()}:p);
+  render();
+  await saveKey('prospects', state.prospects);
+};
+window.ghConvertProspectToClient = async function(id){
+  const p = state.prospects.find(x=>x.id===id);
+  if(!p) return;
+  state.clients.push({id:uid(), createdAt:Date.now(), name:p.name, phone:p.phone, email:p.email, notes:p.notes||''});
+  await saveKey('clients', state.clients);
+  state.view='clients'; render();
+};
+
 window.ghOpenOvoCreate = function(){ state.modal='ovocreate'; render(); };
+function parseJobInfoFromText(text){
+  const result = {};
+  const addrMatch = text.match(/(calle|av\.?|avenida|calzada|blvd\.?|boulevard|privada|prolongación|circuito|carretera|camino)[^,\n.;]{0,60}/i);
+  if(addrMatch) result.location = addrMatch[0].trim();
+  const phoneMatch = text.match(/(\d[\d\s-]{8,13}\d)/);
+  if(phoneMatch){
+    const digits = phoneMatch[0].replace(/\D/g,'');
+    if(digits.length>=10) result.ownerPhone = digits;
+  }
+  const titleMatch = text.match(/(lic\.?|licenciad[oa]|ing\.?|ingenier[oa]|arq\.?|arquitect[oa]|dr\.?|doctor[a]?|notar[ií]a?\s*(?:no\.?|número)?\s*\d*)[^\n,.;]{0,40}/i);
+  if(titleMatch) result.requesterName = titleMatch[0].trim();
+  return result;
+}
 window.ghProcessOvoCreate = function(){
   const type = document.getElementById('gh-ovocreate-type').value;
   const text = document.getElementById('gh-ovocreate-text').value.trim();
@@ -2219,8 +2460,9 @@ window.ghProcessOvoCreate = function(){
     state.modal='appt'; state.editingId=null;
     state.draft = {title:firstLine, date: parsed.date || todayStr(), time: parsed.time || '', reminder:'1day', notes:text};
   }else if(type==='job'){
+    const info = parseJobInfoFromText(text);
     state.modal='job'; state.editingId=null;
-    state.draft = {title:firstLine, type:'otro', status:'en_presupuesto', progress:0, priority:'media', acceptance:'en_proceso', folio:nextFolio(), notes:text};
+    state.draft = {title:firstLine, type:'otro', status:'en_presupuesto', progress:0, priority:'media', acceptance:'en_proceso', folio:nextFolio(), notes:text, location:info.location||'', ownerPhone:info.ownerPhone||'', requesterName:info.requesterName||''};
   }else if(type==='budget'){
     state.modal='budget'; state.editingId=null;
     state.draft = {title:firstLine, status:'borrador', paymentStatus:'pendiente', budgetType:'libre', iva:true, items:[{concept:'', unit:'SERVICIO', qty:1, unitPrice:''}]};
@@ -2430,6 +2672,7 @@ window.ghSendJobExpedienteWhatsapp = function(id){
   if(j.status!=='terminado' && j.pendingReason) msg += `⏳ Por qué no está terminado: ${j.pendingReason}\n`;
   if(relBudgets.length) msg += `\n💰 Presupuesto total: ${fmtMoney(total)}\n`;
   if(relAppts.length) msg += `\n📅 Próxima cita: ${fmtDate(relAppts[0].date)}${relAppts[0].time?` ${relAppts[0].time} hrs`:''}\n`;
+  msg += ovoSignature();
   window.open(waLink(j.clientPhone || (relAppts[0]&&relAppts[0].phone) || '', msg), '_blank');
 };
 
@@ -2476,6 +2719,39 @@ window.ghSaveTask = async function(){
 };
 
 window.ghOpenNewPayment = function(budgetId){ state.modal='payment'; state.paymentTargetId=budgetId; state.draft={date:todayStr()}; render(); };
+window.ghOpenNewJobPayment = function(jobId){ state.modal='jobpayment'; state.paymentTargetId=jobId; state.draft={date:todayStr()}; render(); };
+window.ghQuickAdvance = function(jobId){ state.modal='jobpayment'; state.paymentTargetId=jobId; state.draft={date:todayStr(), type:'anticipo'}; render(); };
+window.ghMarkJobFullyPaid = async function(jobId){
+  const job = state.jobs.find(j=>j.id===jobId);
+  if(!job) return;
+  const pt = jobPriceTotal(job);
+  if(pt.balance<=0) return;
+  job.pricePayments = job.pricePayments || [];
+  job.pricePayments.push({id:uid(), amount:pt.balance, date:todayStr(), type:'pago'});
+  render();
+  await saveKey('jobs', state.jobs);
+  await addJobLog(job.id, `Pago registrado: ${fmtMoney(pt.balance)} (liquidación al 100%)`);
+};
+window.ghSaveJobPayment = async function(){
+  const amount = Number(document.getElementById('f-jpamount').value)||0;
+  const date = document.getElementById('f-jpdate').value || todayStr();
+  const type = document.getElementById('f-jptype').value || 'anticipo';
+  if(amount<=0){ state.modal=null; render(); return; }
+  const job = state.jobs.find(j=>j.id===state.paymentTargetId);
+  if(job){
+    job.pricePayments = job.pricePayments || [];
+    job.pricePayments.push({id:uid(), amount, date, type});
+  }
+  state.modal=null; render();
+  await saveKey('jobs', state.jobs);
+  if(job) await addJobLog(job.id, `${type==='anticipo'?'Anticipo':'Pago'} registrado: ${fmtMoney(amount)}`);
+};
+window.ghDeleteJobPayment = async function(jobId, paymentId){
+  const job = state.jobs.find(j=>j.id===jobId);
+  if(job) job.pricePayments = (job.pricePayments||[]).filter(p=>p.id!==paymentId);
+  render();
+  await saveKey('jobs', state.jobs);
+};
 window.ghSavePayment = async function(){
   const amount = Number(document.getElementById('f-amount').value)||0;
   const date = document.getElementById('f-pdate').value || todayStr();
